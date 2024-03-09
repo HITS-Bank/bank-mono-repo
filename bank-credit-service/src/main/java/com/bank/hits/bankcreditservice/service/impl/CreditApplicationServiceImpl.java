@@ -92,6 +92,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         }
 
         String creditNumber = generateNumericString();
+        log.info("creditNumber: {}", creditNumber);
 
         CreditApplicationResponseDTO responseDTO = new CreditApplicationResponseDTO();
         responseDTO.setNumber(creditNumber);
@@ -229,6 +230,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
     private void sendCreditApprovedEvent(CreditHistory creditHistory) {
         try {
             CreditApprovedDTO approvedDto = new CreditApprovedDTO();
+            approvedDto.setCreditId(creditHistory.getId());
             approvedDto.setClientId(creditHistory.getClientUuid());
             approvedDto.setApprovedAmount(creditHistory.getTotalAmount());
             approvedDto.setRemainingAmount(creditHistory.getRemainingDebt());

@@ -2,6 +2,7 @@ package com.bank.hits.bankcoreservice.core.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.bank.hits.bankcoreservice.api.dto.CreditApprovedDto;
@@ -65,7 +66,13 @@ public class CreditService {
         log.info("Processing credit approval for client {}", creditApprovedDto.getClientId());
 
         final Client client = clientRepository.findByClientId(creditApprovedDto.getClientId())
-                        .orElse(clientRepository.save(new Client(creditApprovedDto.getClientId())));
+                .orElseGet(() -> {
+                    try {
+                        return clientRepository.insertIfNotExists(creditApprovedDto.getClientId()).get();
+                    } catch (DataIntegrityViolationException e) {
+                        return clientRepository.findByClientId(creditApprovedDto.getClientId()).orElseThrow();
+                    }
+                });
 
         final Account creditAccount = accountRepository.findByClientAndAccountType(client, AccountType.CREDIT)
                 .orElseGet(() -> createCreditAccount(client));
