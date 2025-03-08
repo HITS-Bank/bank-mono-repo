@@ -1,3 +1,6 @@
 rootProject.name = "bank-mono-service"
 
-include "bank-user-service", "bank-credit-service", "bank-core-service", "bank-gateway-service"
+include "bank-user-service"
+include "bank-credit-service"
+include "bank-core-service"
+include "bank-gateway-service"
