@@ -6,11 +6,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-import ru.ciklon.bank.bankcoreservice.api.dto.ClientInfoDto;
-import ru.ciklon.bank.bankcoreservice.api.dto.CreditAccountCreatedResponse;
-import ru.ciklon.bank.bankcoreservice.api.dto.CreditPaymentResponseDTO;
-import ru.ciklon.bank.bankcoreservice.core.entity.Account;
-import ru.ciklon.bank.bankcoreservice.core.entity.CreditContract;
+import com.bank.hits.bankcoreservice.api.dto.ClientInfoDto;
+import com.bank.hits.bankcoreservice.api.dto.CreditAccountCreatedResponse;
+import com.bank.hits.bankcoreservice.api.dto.CreditPaymentResponseDTO;
+import com.bank.hits.bankcoreservice.core.entity.Account;
+import com.bank.hits.bankcoreservice.core.entity.CreditContract;
 
 import java.util.UUID;
 

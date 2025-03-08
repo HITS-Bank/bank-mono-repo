@@ -2,8 +2,8 @@ package com.bank.hits.bankcoreservice.core.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import ru.ciklon.bank.bankcoreservice.core.entity.CreditContract;
-import ru.ciklon.bank.bankcoreservice.core.entity.CreditTransaction;
+import com.bank.hits.bankcoreservice.core.entity.CreditContract;
+import com.bank.hits.bankcoreservice.core.entity.CreditTransaction;
 
 import java.util.Collection;
 import java.util.List;

@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ru.ciklon.bank.bankcoreservice.core.service.ClientService;
+import com.bank.hits.bankcoreservice.core.service.ClientService;
 
 import java.util.UUID;
 

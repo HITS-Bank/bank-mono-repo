@@ -1,7 +1,7 @@
 package com.bank.hits.bankcoreservice.api.dto;
 
 import lombok.Data;
-import ru.ciklon.bank.bankcoreservice.api.enums.AccountTransactionType;
+import com.bank.hits.bankcoreservice.api.enums.AccountTransactionType;
 
 import java.time.LocalDateTime;
 import java.util.UUID;

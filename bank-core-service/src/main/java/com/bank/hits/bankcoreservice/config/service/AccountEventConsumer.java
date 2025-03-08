@@ -6,16 +6,16 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
-import ru.ciklon.bank.bankcoreservice.api.dto.AccountDto;
-import ru.ciklon.bank.bankcoreservice.api.dto.ClientInfoDto;
-import ru.ciklon.bank.bankcoreservice.api.dto.CreditApprovedDto;
-import ru.ciklon.bank.bankcoreservice.api.dto.CreditPaymentResponseDTO;
-import ru.ciklon.bank.bankcoreservice.api.dto.CreditRepaymentRequest;
-import ru.ciklon.bank.bankcoreservice.api.dto.OpenAccountDto;
-import ru.ciklon.bank.bankcoreservice.core.service.AccountService;
-import ru.ciklon.bank.bankcoreservice.core.service.ClientService;
-import ru.ciklon.bank.bankcoreservice.core.service.CreditService;
-import ru.ciklon.bank.bankcoreservice.core.service.EmployeeService;
+import com.bank.hits.bankcoreservice.api.dto.AccountDto;
+import com.bank.hits.bankcoreservice.api.dto.ClientInfoDto;
+import com.bank.hits.bankcoreservice.api.dto.CreditApprovedDto;
+import com.bank.hits.bankcoreservice.api.dto.CreditPaymentResponseDTO;
+import com.bank.hits.bankcoreservice.api.dto.CreditRepaymentRequest;
+import com.bank.hits.bankcoreservice.api.dto.OpenAccountDto;
+import com.bank.hits.bankcoreservice.core.service.AccountService;
+import com.bank.hits.bankcoreservice.core.service.ClientService;
+import com.bank.hits.bankcoreservice.core.service.CreditService;
+import com.bank.hits.bankcoreservice.core.service.EmployeeService;
 
 import java.util.UUID;
 

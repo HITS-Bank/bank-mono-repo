@@ -10,8 +10,8 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.ciklon.bank.bankcoreservice.api.enums.CreditTransactionType;
-import ru.ciklon.bank.bankcoreservice.core.entity.CreditContract;
+import com.bank.hits.bankcoreservice.api.enums.CreditTransactionType;
+import com.bank.hits.bankcoreservice.core.entity.CreditContract;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

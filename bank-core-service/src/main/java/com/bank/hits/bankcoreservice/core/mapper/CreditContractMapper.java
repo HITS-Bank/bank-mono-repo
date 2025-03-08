@@ -1,8 +1,8 @@
 package com.bank.hits.bankcoreservice.core.mapper;
 
 import org.mapstruct.Mapper;
-import ru.ciklon.bank.bankcoreservice.api.dto.CreditContractDto;
-import ru.ciklon.bank.bankcoreservice.core.entity.CreditContract;
+import com.bank.hits.bankcoreservice.api.dto.CreditContractDto;
+import com.bank.hits.bankcoreservice.core.entity.CreditContract;
 
 @Mapper
 public interface CreditContractMapper {

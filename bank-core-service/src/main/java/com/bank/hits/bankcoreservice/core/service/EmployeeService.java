@@ -2,8 +2,8 @@ package com.bank.hits.bankcoreservice.core.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.ciklon.bank.bankcoreservice.core.entity.Employee;
-import ru.ciklon.bank.bankcoreservice.core.repository.EmployeeRepository;
+import com.bank.hits.bankcoreservice.core.entity.Employee;
+import com.bank.hits.bankcoreservice.core.repository.EmployeeRepository;
 
 import java.util.UUID;
 

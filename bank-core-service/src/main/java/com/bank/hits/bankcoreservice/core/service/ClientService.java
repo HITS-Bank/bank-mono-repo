@@ -2,15 +2,15 @@ package com.bank.hits.bankcoreservice.core.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.ciklon.bank.bankcoreservice.api.dto.AccountDto;
-import ru.ciklon.bank.bankcoreservice.api.dto.AccountTransactionDto;
-import ru.ciklon.bank.bankcoreservice.api.dto.ClientDto;
-import ru.ciklon.bank.bankcoreservice.api.dto.ClientInfoDto;
-import ru.ciklon.bank.bankcoreservice.api.dto.CreditContractDto;
-import ru.ciklon.bank.bankcoreservice.api.dto.CreditTransactionDto;
-import ru.ciklon.bank.bankcoreservice.core.entity.Client;
-import ru.ciklon.bank.bankcoreservice.core.mapper.ClientMapper;
-import ru.ciklon.bank.bankcoreservice.core.repository.ClientRepository;
+import com.bank.hits.bankcoreservice.api.dto.AccountDto;
+import com.bank.hits.bankcoreservice.api.dto.AccountTransactionDto;
+import com.bank.hits.bankcoreservice.api.dto.ClientDto;
+import com.bank.hits.bankcoreservice.api.dto.ClientInfoDto;
+import com.bank.hits.bankcoreservice.api.dto.CreditContractDto;
+import com.bank.hits.bankcoreservice.api.dto.CreditTransactionDto;
+import com.bank.hits.bankcoreservice.core.entity.Client;
+import com.bank.hits.bankcoreservice.core.mapper.ClientMapper;
+import com.bank.hits.bankcoreservice.core.repository.ClientRepository;
 
 import java.util.List;
 import java.util.UUID;

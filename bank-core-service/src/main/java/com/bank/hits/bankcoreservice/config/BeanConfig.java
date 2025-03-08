@@ -3,11 +3,11 @@ package com.bank.hits.bankcoreservice.config;
 import org.mapstruct.factory.Mappers;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import ru.ciklon.bank.bankcoreservice.core.mapper.AccountMapper;
-import ru.ciklon.bank.bankcoreservice.core.mapper.AccountTransactionMapper;
-import ru.ciklon.bank.bankcoreservice.core.mapper.ClientMapper;
-import ru.ciklon.bank.bankcoreservice.core.mapper.CreditContractMapper;
-import ru.ciklon.bank.bankcoreservice.core.mapper.CreditTransactionMapper;
+import com.bank.hits.bankcoreservice.core.mapper.AccountMapper;
+import com.bank.hits.bankcoreservice.core.mapper.AccountTransactionMapper;
+import com.bank.hits.bankcoreservice.core.mapper.ClientMapper;
+import com.bank.hits.bankcoreservice.core.mapper.CreditContractMapper;
+import com.bank.hits.bankcoreservice.core.mapper.CreditTransactionMapper;
 
 @Configuration
 public class BeanConfig {

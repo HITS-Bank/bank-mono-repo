@@ -10,11 +10,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import ru.ciklon.bank.bankcoreservice.api.dto.AccountDto;
-import ru.ciklon.bank.bankcoreservice.api.dto.AccountTransactionDto;
-import ru.ciklon.bank.bankcoreservice.api.dto.OpenAccountDto;
-import ru.ciklon.bank.bankcoreservice.api.dto.TransactionRequest;
-import ru.ciklon.bank.bankcoreservice.core.service.AccountService;
+import com.bank.hits.bankcoreservice.api.dto.AccountDto;
+import com.bank.hits.bankcoreservice.api.dto.AccountTransactionDto;
+import com.bank.hits.bankcoreservice.api.dto.OpenAccountDto;
+import com.bank.hits.bankcoreservice.api.dto.TransactionRequest;
+import com.bank.hits.bankcoreservice.core.service.AccountService;
 
 import java.util.List;
 import java.util.UUID;

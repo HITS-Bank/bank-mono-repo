@@ -1,8 +1,8 @@
 package com.bank.hits.bankcoreservice.core.mapper;
 
 import org.mapstruct.Mapper;
-import ru.ciklon.bank.bankcoreservice.api.dto.AccountTransactionDto;
-import ru.ciklon.bank.bankcoreservice.core.entity.AccountTransaction;
+import com.bank.hits.bankcoreservice.api.dto.AccountTransactionDto;
+import com.bank.hits.bankcoreservice.core.entity.AccountTransaction;
 
 @Mapper
 public interface AccountTransactionMapper {

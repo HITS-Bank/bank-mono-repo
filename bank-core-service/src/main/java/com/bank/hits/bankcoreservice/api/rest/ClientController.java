@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import ru.ciklon.bank.bankcoreservice.api.dto.ClientDto;
-import ru.ciklon.bank.bankcoreservice.api.dto.ClientInfoDto;
-import ru.ciklon.bank.bankcoreservice.core.service.ClientService;
+import com.bank.hits.bankcoreservice.api.dto.ClientDto;
+import com.bank.hits.bankcoreservice.api.dto.ClientInfoDto;
+import com.bank.hits.bankcoreservice.core.service.ClientService;
 
 import java.util.UUID;
 

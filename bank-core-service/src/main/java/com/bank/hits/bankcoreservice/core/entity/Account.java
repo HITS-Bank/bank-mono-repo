@@ -13,8 +13,8 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.ciklon.bank.bankcoreservice.api.enums.AccountType;
-import ru.ciklon.bank.bankcoreservice.core.entity.Client;
+import com.bank.hits.bankcoreservice.api.enums.AccountType;
+import com.bank.hits.bankcoreservice.core.entity.Client;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -30,7 +30,7 @@ public class Account {
     private String accountNumber;
     @ManyToOne
     @JoinColumn(name = "client_id", nullable = false)
-    private ru.ciklon.bank.bankcoreservice.core.entity.Client client;
+    private Client client;
     private BigDecimal balance;
     private boolean blocked;
     private boolean closed;

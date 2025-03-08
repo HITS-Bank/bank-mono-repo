@@ -2,9 +2,9 @@ package com.bank.hits.bankcoreservice.core.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import ru.ciklon.bank.bankcoreservice.api.enums.AccountType;
-import ru.ciklon.bank.bankcoreservice.core.entity.Account;
-import ru.ciklon.bank.bankcoreservice.core.entity.Client;
+import com.bank.hits.bankcoreservice.api.enums.AccountType;
+import com.bank.hits.bankcoreservice.core.entity.Account;
+import com.bank.hits.bankcoreservice.core.entity.Client;
 
 import java.util.List;
 import java.util.Optional;
