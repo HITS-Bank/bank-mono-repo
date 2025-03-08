@@ -12,7 +12,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Header;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.jms.core.JmsTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -28,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @RequiredArgsConstructor
 public class EmployeeVerificationServiceImpl implements EmployeeVerificationService {
-    private final JmsTemplate jmsTemplate;
     private final Map<String, SemaphoreResponsePair> semaphoreMap = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper;
 

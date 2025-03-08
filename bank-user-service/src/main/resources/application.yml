@@ -2,7 +2,7 @@ spring:
   application:
     name: user_service
   datasource:
-    url: jdbc:postgresql://localhost:5433/users
+    url: ${USER_DATABASE_URL:jdbc:postgresql://localhost:5433/users}
     username: myuser
     password: mypassword
     driver-class-name: org.postgresql.Driver
@@ -16,7 +16,7 @@ spring:
         format_sql: true
         show_sql: true
   kafka:
-    bootstrap-servers: ${BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${BOOTSTRAP_SERVERS:kafka:9092}
   sql:
     init:
       mode: always

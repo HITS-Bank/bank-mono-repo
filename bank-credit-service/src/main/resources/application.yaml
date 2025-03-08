@@ -5,9 +5,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5440/creditDB
+    url: ${USER_DATABASE_URL:jdbc:postgresql://localhost:5434/credit_db}
     username: postgres #ur User
-    password: postgres #ur password
+    password: 12345 #ur password
     driver-class-name: org.postgresql.Driver
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect

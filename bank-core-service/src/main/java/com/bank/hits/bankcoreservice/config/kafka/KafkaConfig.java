@@ -19,7 +19,7 @@ import java.util.Map;
 @EnableKafka
 public class KafkaConfig {
 
-    private final String BOOTSTRAP_SERVERS = "localhost:9092";
+    private final String BOOTSTRAP_SERVERS = "kafka:9092";
 
     @Bean
     public ProducerFactory<String, String> producerFactory() {
