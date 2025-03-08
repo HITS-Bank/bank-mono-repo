@@ -1,0 +1,35 @@
+server:
+  port: ${APPLICATION_PORT:8888}
+  tomcat:
+    connection-timeout: 120000
+
+spring:
+  application:
+    name: bank-core-service
+  datasource:
+    url: ${USER_DATABASE_URL:jdbc:postgresql://localhost:5432/bank}
+    username: postgres
+    password: 12345
+    driver-class-name: org.postgresql.Driver
+  liquibase:
+    enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka1:29092}
+    consumer:
+      bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka1:29092}
+      group-id: bank-group
+      auto-offset-reset: earliest
+    listener:
+      missing-topics-fatal: false
+    producer:
+      bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka1:29092}
+
+logging:
+  liquibase:
+    change-log: classpath:db/changelog/changelog.xml

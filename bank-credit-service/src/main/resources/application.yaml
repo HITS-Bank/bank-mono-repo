@@ -1,0 +1,52 @@
+server:
+  port: ${APPLICATION_PORT:8989}
+  tomcat:
+    connection-timeout: 120000
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5440/creditDB
+    username: postgres #ur User
+    password: postgres #ur password
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 6000
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        max-wait: -1ms
+  cache:
+    type: redis
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: bank.group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+kafka:
+  topics:
+    employee-verification:
+      request: credit.user.info.request
+      response: credit.user.info.response
+    core-information:
+      request: credit.client.info.request
+      response: credit.client.info.response
+    approve: credit.approved
+    credit-payment:
+      request: credit.payment.request
+      response: credit.payment.response
+

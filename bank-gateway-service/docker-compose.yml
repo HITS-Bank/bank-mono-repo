@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  gateway:
+    build: .
+    container_name: gateway
+    restart: always
+    ports:
+      - "8581:8581"
+    networks:
+      - network-local
+
+networks:
+  network-local:
+    driver: bridge
