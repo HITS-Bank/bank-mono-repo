@@ -1,5 +1,6 @@
 package com.bank.hits.bankcoreservice.core.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -12,6 +13,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import com.bank.hits.bankcoreservice.core.entity.Account;
 import com.bank.hits.bankcoreservice.core.entity.Client;
+import org.hibernate.annotations.NaturalId;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -27,6 +29,10 @@ public class CreditContract {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID creditContractId;
+
+    @NaturalId
+    @Column(nullable = false, unique = true)
+    private UUID creditApprovedId;
     private BigDecimal creditAmount;
     private BigDecimal remainingAmount;
     private LocalDateTime startDate;
