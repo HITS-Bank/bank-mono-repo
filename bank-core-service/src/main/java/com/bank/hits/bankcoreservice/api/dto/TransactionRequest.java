@@ -6,6 +6,7 @@ import java.util.UUID;
 
 @Data
 public class TransactionRequest {
-    private final UUID accountId;
+    private final String accountNumber;
     private final String amount;
 }
+

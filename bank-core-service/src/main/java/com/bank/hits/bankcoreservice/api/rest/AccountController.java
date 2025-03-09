@@ -1,12 +1,15 @@
 package com.bank.hits.bankcoreservice.api.rest;
 
 import com.bank.hits.bankcoreservice.api.constant.ApiConstants;
+import com.bank.hits.bankcoreservice.api.dto.AccountHistoryPaginationResponse;
+import com.bank.hits.bankcoreservice.api.dto.AccountsPaginationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -44,8 +47,10 @@ public class AccountController {
     }
 
     @GetMapping(ApiConstants.GET_ACCOUNTS)
-    public ResponseEntity<List<AccountDto>> getAccounts(@RequestParam final UUID clientId) {
-        return ResponseEntity.ok(accountService.getAllClientAccounts(clientId));
+    public ResponseEntity<AccountsPaginationResponse> getAccounts(@PathVariable("userId") final UUID userId,
+                                                                  @RequestParam final int pageSize,
+                                                                  @RequestParam final int pageNumber) {
+        return ResponseEntity.ok(accountService.getAllClientAccounts(userId, pageSize, pageNumber - 1));
     }
 
     @GetMapping(ApiConstants.GET_ACCOUNT_BY_ACCOUNT_NUMBER)
@@ -54,18 +59,19 @@ public class AccountController {
     }
 
     @PostMapping(ApiConstants.DEPOSIT)
-    public ResponseEntity<AccountDto> deposit(@RequestBody final TransactionRequest transactionRequest) {
+    public ResponseEntity<AccountDto> deposit(@RequestHeader("userId") UUID clientId, @RequestBody final TransactionRequest transactionRequest) {
         return ResponseEntity.ok(accountService.deposit(transactionRequest));
     }
 
     @PostMapping(ApiConstants.WITHDRAW)
-    public ResponseEntity<AccountDto> withdraw(@RequestBody final TransactionRequest transactionRequest) {
+    public ResponseEntity<AccountDto> withdraw(@RequestHeader("userId") UUID clientId, @RequestBody final TransactionRequest transactionRequest) {
         return ResponseEntity.ok(accountService.withdraw(transactionRequest));
     }
 
     @PostMapping(ApiConstants.ACCOUNT_HISTORY)
-    public ResponseEntity<List<AccountTransactionDto>> getAccountHistory(@PathVariable final UUID accountId) {
-        return ResponseEntity.ok(accountService.getAccountHistory(accountId));
+    public ResponseEntity<AccountHistoryPaginationResponse> getAccountHistory(@PathVariable final UUID accountId, @RequestParam final int pageSize,
+                                                                              @RequestParam final int pageNumber) {
+        return ResponseEntity.ok(accountService.getAccountHistory(accountId, pageSize, pageNumber - 1));
     }
 
 }

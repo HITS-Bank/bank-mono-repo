@@ -32,4 +32,5 @@ public class ClientController {
     public ResponseEntity<ClientDto> createClient(final ClientDto clientDto) {
         return ResponseEntity.ok(clientService.createClient(clientDto));
     }
+
 }
