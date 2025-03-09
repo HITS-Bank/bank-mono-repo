@@ -1,13 +1,14 @@
 package com.bank.hits.bankcoreservice.api.rest;
 
 import com.bank.hits.bankcoreservice.api.constant.ApiConstants;
-import com.bank.hits.bankcoreservice.api.dto.AccountHistoryPaginationResponse;
+
 import com.bank.hits.bankcoreservice.api.dto.AccountNumberRequest;
 import com.bank.hits.bankcoreservice.api.dto.AccountsPaginationResponse;
 import com.bank.hits.bankcoreservice.api.dto.CloseAccountRequest;
 import com.bank.hits.bankcoreservice.api.dto.TopUpRequest;
 import com.bank.hits.bankcoreservice.api.dto.WithdrawRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,45 +33,45 @@ public class AccountController {
 
     private final AccountService accountService;
 
-    @PostMapping(ApiConstants.CREATE_ACCOUNT)
+    @PostMapping(value = ApiConstants.CREATE_ACCOUNT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AccountDto> createAccount(@RequestHeader("userId") final UUID clientId) {
         return ResponseEntity.ok(accountService.openAccount(clientId));
     }
 
-    @PostMapping(ApiConstants.CLOSE_ACCOUNT)
+    @PostMapping(value = ApiConstants.CLOSE_ACCOUNT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> closeAccount(@RequestBody final CloseAccountRequest request) {
         accountService.closeAccount(request);
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping(ApiConstants.GET_ACCOUNT)
+    @GetMapping(value = ApiConstants.GET_ACCOUNT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AccountDto> getAccount(@PathVariable final UUID accountId) {
         return ResponseEntity.ok(accountService.getAccountById(accountId));
     }
 
-    @GetMapping(ApiConstants.GET_ACCOUNTS)
+    @GetMapping(value = ApiConstants.GET_ACCOUNTS, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AccountsPaginationResponse> getAccounts(@RequestHeader("userId") final UUID userId,
                                                                   @RequestParam final int pageSize,
                                                                   @RequestParam final int pageNumber) {
         return ResponseEntity.ok(accountService.getAllClientAccounts(userId, pageSize, pageNumber - 1));
     }
 
-    @GetMapping(ApiConstants.GET_ACCOUNT_BY_ACCOUNT_NUMBER)
+    @GetMapping(value = ApiConstants.GET_ACCOUNT_BY_ACCOUNT_NUMBER, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AccountDto> getAccount(@RequestBody final AccountNumberRequest accountNumberRequest) {
         return ResponseEntity.ok(accountService.getAccountByAccountNumber(accountNumberRequest));
     }
 
-    @PostMapping(ApiConstants.DEPOSIT)
+    @PostMapping(value = ApiConstants.DEPOSIT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AccountDto> deposit(@RequestHeader("userId") UUID clientId, @RequestBody final TopUpRequest transactionRequest) {
         return ResponseEntity.ok(accountService.deposit(transactionRequest));
     }
 
-    @PostMapping(ApiConstants.WITHDRAW)
+    @PostMapping(value = ApiConstants.WITHDRAW, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AccountDto> withdraw(@RequestHeader("userId") UUID clientId, @RequestBody final WithdrawRequest transactionRequest) {
         return ResponseEntity.ok(accountService.withdraw(transactionRequest));
     }
 
-    @PostMapping(ApiConstants.ACCOUNT_HISTORY)
+    @PostMapping(value = ApiConstants.ACCOUNT_HISTORY, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<AccountTransactionDto>> getAccountHistory(@RequestBody final AccountNumberRequest request, @RequestParam final int pageSize,
                                                                               @RequestParam final int pageNumber) {
         return ResponseEntity.ok(accountService.getAccountHistory(request, pageSize, pageNumber - 1));
