@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.jms.JMSException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -40,6 +41,10 @@ import java.util.stream.Collectors;
 public class CreditApplicationServiceImpl implements CreditApplicationService {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
+
+    private static final int LENGTH = 16;
+
+    private static final SecureRandom random = new SecureRandom();
 
     private final Map<String, SemaphoreResponsePair> semaphoreMap = new ConcurrentHashMap<>();
 
@@ -86,8 +91,10 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
             throw new CreditCreationException("Вам отказано в кредите");
         }
 
+        String creditNumber = generateNumericString();
+
         CreditApplicationResponseDTO responseDTO = new CreditApplicationResponseDTO();
-        responseDTO.setNumber(request.getBankAccountNumber());
+        responseDTO.setNumber(creditNumber);
 
         CreditApplicationResponseDTO.TariffDTO tariffDTO = new CreditApplicationResponseDTO.TariffDTO();
         tariffDTO.setId(tariff.getId());
@@ -116,10 +123,18 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         creditHistory.setMonthlyPayment(monthlyPayment);
         creditHistory.setEndDate(LocalDateTime.now().plusMonths(request.getTermInMonths()));
         creditHistory.setRemainingDebt(totalPayment);
-        creditHistory.setLoanNumber(request.getBankAccountNumber());
+        creditHistory.setLoanNumber(creditNumber);
         creditHistoryRepository.save(creditHistory);
         sendCreditApprovedEvent(creditHistory);
         return responseDTO;
+    }
+
+    public static String generateNumericString() {
+        StringBuilder sb = new StringBuilder(LENGTH);
+        for (int i = 0; i < LENGTH; i++) {
+            sb.append(random.nextInt(10));
+        }
+        return sb.toString();
     }
 
 
@@ -142,7 +157,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
 
     public UserLoansResponseDTO.LoanDTO getCreditByNumber(String number)
     {
-        Optional<CreditHistory> credit = creditHistoryRepository.findByLoanNumber(number);
+        Optional<CreditHistory> credit = creditHistoryRepository.findByNumber(number);
         if(!credit.isPresent())
         {
             throw new NoSuchElementException("Не удалось найти тариф с указанным номером");
@@ -188,7 +203,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
 
     private UserLoansResponseDTO.LoanDTO convertToDTO(CreditHistory credit) {
         UserLoansResponseDTO.LoanDTO loanDTO = new UserLoansResponseDTO.LoanDTO();
-        loanDTO.setNumber(credit.getLoanNumber());
+        loanDTO.setNumber(credit.getNumber());
         loanDTO.setAmount(credit.getTotalAmount());
         loanDTO.setTermInMonths((int) credit.getEndDate().minusMonths(credit.getStartDate().getMonthValue()).getMonthValue());
         loanDTO.setBankAccountNumber(credit.getLoanNumber());

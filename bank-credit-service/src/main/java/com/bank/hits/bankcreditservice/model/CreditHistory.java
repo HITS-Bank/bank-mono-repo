@@ -26,6 +26,9 @@ public class CreditHistory {
     @Column(name = "loanNumber", nullable = false)
     private String loanNumber;
 
+    @Column(name = "number", nullable = false)
+    private String number;
+
     @Column(name = "client_uuid", nullable = false)
     private UUID clientUuid;
 
