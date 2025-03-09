@@ -42,6 +42,7 @@ public class EmployeeVerificationServiceImpl implements EmployeeVerificationServ
     public boolean verifyEmployee(String employeeUuid) throws Exception {
         String verificationMessage = employeeUuid;
         Semaphore semaphore = new Semaphore(0);
+        log.info("Отправка сообщения верификации");
         String messageId = sendVerificationMessage(verificationMessage, employeeUuid, semaphore);
         boolean acquired = semaphore.tryAcquire(30, TimeUnit.SECONDS);
         if (!acquired) {
@@ -65,7 +66,7 @@ public class EmployeeVerificationServiceImpl implements EmployeeVerificationServ
 
     private String sendVerificationMessage(String messageContent, String employeeUuid, Semaphore semaphore) throws JMSException {
         String correlationId = UUID.randomUUID().toString();
-
+        log.info("Отправляем сообщение {}", messageContent);
         ProducerRecord<String, String> record = new ProducerRecord<>(employeeVerificationRequestTopic, messageContent);
         record.headers().add("event_type", "verify_employee".getBytes());
         record.headers().add("employee_uuid", employeeUuid.getBytes());
