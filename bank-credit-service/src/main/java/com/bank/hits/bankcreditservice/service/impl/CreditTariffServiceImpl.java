@@ -78,8 +78,8 @@ public class CreditTariffServiceImpl implements CreditTariffService {
 
     private String mapSortingProperty(String property) {
         return switch (property.toLowerCase()) {
-            case "created_at" -> "created_at";
-            case "interest_rate" -> "interest_rate";
+            case "created_at" -> "createdAt";
+            case "interest_rate" -> "interestRate";
             default -> "name";
         };
     }
