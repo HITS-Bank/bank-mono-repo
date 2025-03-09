@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import com.bank.hits.bankcoreservice.api.dto.*;
 import com.bank.hits.bankcoreservice.api.enums.OperationType;
@@ -120,7 +121,7 @@ public class AccountService {
     }
 
     public List<AccountTransactionDto> getAccountHistory(final AccountNumberRequest request, final int pageSize, final int pageNumber) {
-        final Pageable pageable = PageRequest.of(pageNumber, pageSize);
+        final Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Order.desc("transactionDate")));
         final Account account = accountRepository.findByAccountNumber(request.getAccountNumber())
                 .orElseThrow(() -> new EntityNotFoundException("Account not found"));
         return accountTransactionRepository.findByAccountId(account.getId(), pageable).stream()
@@ -141,6 +142,7 @@ public class AccountService {
                 .orElseThrow(() -> new EntityNotFoundException("Client not found"));
         return accountRepository.findByClient(client).stream()
                 .flatMap(account -> accountTransactionRepository.findByAccountId(account.getId()).stream())
+                .sorted((t1, t2) -> t2.getTransactionDate().compareTo(t1.getTransactionDate()))
                 .map(accountTransactionMapper::map)
                 .toList();
     }
@@ -216,7 +218,7 @@ public class AccountService {
     }
 
     public AccountsPaginationResponse getAllClientAccounts(final UUID clientId, int pageSize, int pageNumber) {
-        final Pageable pageable = PageRequest.of(pageNumber, pageSize);
+        final Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Order.desc("createdDate")));
 
         final Client client = clientRepository.findByClientId(clientId)
                 .orElse(null);

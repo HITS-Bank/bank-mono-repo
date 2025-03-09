@@ -22,7 +22,7 @@ public class CreditApplicationResponseDTO {
     public static class TariffDTO {
         private UUID id;
         private String name;
-        private BigDecimal interestRate;
+        private Double interestRate;
         private LocalDateTime createdAt;
     }
 }
