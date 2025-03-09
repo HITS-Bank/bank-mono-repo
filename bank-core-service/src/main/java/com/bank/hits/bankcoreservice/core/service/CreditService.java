@@ -23,6 +23,7 @@ import com.bank.hits.bankcoreservice.core.repository.CreditTransactionRepository
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,6 +45,7 @@ public class CreditService {
         final var client = clientRepository.findByClientId(clientId)
                 .orElseThrow(() -> new RuntimeException("Client not found"));
         return creditContractRepository.findByClient(client).stream()
+                .sorted(Comparator.comparing(CreditContract::getCreatedDate).reversed())
                 .map(creditContractMapper::map)
                 .toList();
     }
@@ -53,6 +55,7 @@ public class CreditService {
                 .orElseThrow(() -> new RuntimeException("Client not found"));
         final List<CreditContract> creditContracts = creditContractRepository.findByClient(client);
         return creditContractTransactionRepository.findByCreditContractIn(creditContracts).stream()
+                .sorted(Comparator.comparing(CreditTransaction::getPaymentDate).reversed())
                 .map(creditTransactionMapper::map)
                 .toList();
     }
