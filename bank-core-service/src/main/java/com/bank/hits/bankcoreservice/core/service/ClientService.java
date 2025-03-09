@@ -26,13 +26,13 @@ public class ClientService {
     private final ClientMapper clientMapper;
 
     public ClientDto createClient(ClientDto clientDto) {
-        return clientMapper.map(clientRepository.save(new Client(clientDto.getClientId(), false)));
+        return clientMapper.map(clientRepository.save(new Client(clientDto.getClientId())));
     }
 
     public ClientInfoDto getClientInfo(final UUID clientId, final UUID employeeId) {
         final ClientInfoDto clientInfoDto = new ClientInfoDto();
 
-        final Client client = clientRepository.findById(clientId)
+        final Client client = clientRepository.findByClientId(clientId)
                 .orElseThrow(() -> new RuntimeException("Client not found"));
         clientInfoDto.setClientId(client.getId());
 
@@ -59,9 +59,9 @@ public class ClientService {
     public ClientInfoDto getClientInfoForCredit(final UUID clientId) {
         final ClientInfoDto clientInfoDto = new ClientInfoDto();
 
-        final Client client = clientRepository.findById(clientId)
+        final Client client = clientRepository.findByClientId(clientId)
                 .orElseThrow(() -> new RuntimeException("Client not found"));
-        clientInfoDto.setClientId(client.getId());
+        clientInfoDto.setClientId(clientId);
 
         final List<AccountDto> accountDtos = accountService.getAccountsByClientId(clientId);
         clientInfoDto.setAccounts(accountDtos);
@@ -80,7 +80,7 @@ public class ClientService {
 
 
     public void blockClientAccounts(final UUID clientId) {
-        final Client client = clientRepository.findById(clientId)
+        final Client client = clientRepository.findByClientId(clientId)
                 .orElseThrow(() -> new RuntimeException("Client not found"));
 
         clientRepository.save(client.withBlocked(true));
@@ -88,7 +88,7 @@ public class ClientService {
     }
 
     public void unblockClientAccounts(final UUID clientId) {
-        final Client client = clientRepository.findById(clientId)
+        final Client client = clientRepository.findByClientId(clientId)
                 .orElseThrow(() -> new RuntimeException("Client not found"));
 
         clientRepository.save(client.withBlocked(false));
