@@ -71,6 +71,7 @@ public class CreditService {
                 .orElseGet(() -> createCreditAccount(client));
 
         CreditContract creditContract = new CreditContract();
+        creditContract.setCreditApprovedId(creditApprovedDto.getCreditId());
         creditContract.setCreditAmount(creditApprovedDto.getApprovedAmount());
         creditContract.setRemainingAmount(creditApprovedDto.getApprovedAmount());
         creditContract.setStartDate(LocalDateTime.now());
