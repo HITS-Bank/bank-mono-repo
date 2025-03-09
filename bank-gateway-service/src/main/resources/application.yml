@@ -9,7 +9,7 @@ spring:
         - id: bank-core-service
           uri: http://core-app:9444
           predicates:
-            - Path=/users/**
+            - Path=/core/**
         - id: bank-users-service
           uri: http://user-app:9447
           predicates:
