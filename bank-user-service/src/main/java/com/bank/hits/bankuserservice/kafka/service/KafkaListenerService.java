@@ -45,7 +45,7 @@ public class KafkaListenerService {
             log.info("объект");
             try {
                 CreditUserInfoRequestPayload responseDTO = objectMapper.convertValue(messageValue, CreditUserInfoRequestPayload.class);
-                response = responseDTO.getUserId();
+                response = responseDTO.userId();
                 log.info("response= {}", response);
             } catch (Exception e) {
                 log.error("Ошибка при десериализации JSON: ", e);
