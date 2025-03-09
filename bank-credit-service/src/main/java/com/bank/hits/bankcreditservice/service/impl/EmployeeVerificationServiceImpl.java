@@ -86,6 +86,7 @@ public class EmployeeVerificationServiceImpl implements EmployeeVerificationServ
         }
         String correlationId = new String(header.value());
 
+        log.info("Получено сообщение с corId {}", correlationId);
         Object messageValue = record.value();
         String response;
 
