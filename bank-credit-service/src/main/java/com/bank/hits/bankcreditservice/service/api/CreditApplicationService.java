@@ -8,5 +8,5 @@ public interface CreditApplicationService {
     CreditApplicationResponseDTO processApplication(CreditApplicationRequestDTO request, String clientUuid) throws Exception;
     public UserLoansResponseDTO getUserLoans(String clientUuid, int pageSize, int pageNumber);
 
-    public CreditApplicationResponseDTO getCreditByNumber(String number);
+    public UserLoansResponseDTO.LoanDTO getCreditByNumber(String number);
 }

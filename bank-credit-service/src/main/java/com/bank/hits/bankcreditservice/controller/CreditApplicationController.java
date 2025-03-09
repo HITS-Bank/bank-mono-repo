@@ -86,8 +86,8 @@ public class CreditApplicationController {
     }
 
     @GetMapping("/loan/{loan}")
-    public ResponseEntity<CreditApplicationResponseDTO> getTariffById(@PathVariable String loan) {
-        CreditApplicationResponseDTO tariff = creditApplicationService.getCreditByNumber(loan);
-        return ResponseEntity.ok(tariff);
+    public ResponseEntity<UserLoansResponseDTO.LoanDTO> getTariffById(@PathVariable String loan) {
+        UserLoansResponseDTO.LoanDTO credit = creditApplicationService.getCreditByNumber(loan);
+        return ResponseEntity.ok(credit);
     }
 }

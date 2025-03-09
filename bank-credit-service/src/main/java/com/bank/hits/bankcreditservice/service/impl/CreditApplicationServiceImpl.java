@@ -141,7 +141,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         return response;
     }
 
-    public CreditApplicationResponseDTO getCreditByNumber(String number)
+    public UserLoansResponseDTO.LoanDTO getCreditByNumber(String number)
     {
         Optional<CreditHistory> credit = creditHistoryRepository.findByLoanNumber(number);
         if(!credit.isPresent())
@@ -149,6 +149,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
             throw new NoSuchElementException("Не удалось найти тариф с указанным номером");
         }
         CreditHistory request = credit.get();
+        /*
         Optional<CreditTariff> tariffOpt = creditTariffRepository.findById(request.getTariffId());
         if (tariffOpt.isEmpty()) {
             throw new RuntimeException("Тариф не найден");
@@ -180,6 +181,10 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         responseDTO.setNextPaymentDateTime(LocalDateTime.now().plusMonths(1));
         responseDTO.setCurrentDebt(request.getTotalAmount().add(totalPayment.subtract(BigDecimal.valueOf(monthsBetween))));
         return responseDTO;
+
+         */
+        UserLoansResponseDTO.LoanDTO response = convertToDTO(request);
+        return response;
     }
 
     private UserLoansResponseDTO.LoanDTO convertToDTO(CreditHistory credit) {
