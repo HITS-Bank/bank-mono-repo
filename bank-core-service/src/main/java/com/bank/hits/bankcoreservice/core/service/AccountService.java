@@ -7,7 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import com.bank.hits.bankcoreservice.api.dto.*;
-import com.bank.hits.bankcoreservice.api.enums.AccountTransactionType;
+import com.bank.hits.bankcoreservice.api.enums.OperationType;
 import com.bank.hits.bankcoreservice.api.enums.CreditTransactionType;
 import com.bank.hits.bankcoreservice.core.entity.Account;
 import com.bank.hits.bankcoreservice.core.entity.AccountTransaction;
@@ -43,23 +43,23 @@ public class AccountService {
     private final AccountMapper accountMapper;
 
 
-    public AccountDto openAccount(final OpenAccountDto openAccountDto) {
+    public AccountDto openAccount(final UUID clientId) {
         final String generatedAccountNumber = accountNumberGenerator.generateAccountNumber();
-        final Client client = clientRepository.findById(openAccountDto.getClientId())
+        final Client client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new RuntimeException("Client not found"));
         final Account account = new Account(client, generatedAccountNumber);
         accountRepository.save(account);
         return accountMapper.map(account);
     }
 
-    public void closeAccount(final UUID accountId) {
-        final Account account = accountRepository.findById(accountId)
+    public void closeAccount(final CloseAccountRequest request) {
+        final Account account = accountRepository.findByAccountNumber(request.getAccountNumber())
                 .orElseThrow(() -> new RuntimeException("Account not found"));
         account.setClosed(true);
         accountRepository.save(account);
     }
 
-    public AccountDto deposit(final TransactionRequest request) {
+    public AccountDto deposit(final TopUpRequest request) {
         final Account account = accountRepository.findByAccountNumber(request.getAccountNumber())
                 .orElseThrow(() -> new RuntimeException("Account not found"));
         if (account.isClosed()) {
@@ -68,11 +68,11 @@ public class AccountService {
         final var amount = new BigDecimal(request.getAmount());
         account.setBalance(account.getBalance().add(amount));
         accountRepository.save(account);
-        recordAccountTransaction(account, AccountTransactionType.DEPOSIT, amount);
+        recordAccountTransaction(account, OperationType.TOP_UP, amount);
         return accountMapper.map(account);
     }
 
-    public AccountDto withdraw(final TransactionRequest request) {
+    public AccountDto withdraw(final WithdrawRequest request) {
         final Account account = accountRepository.findByAccountNumber(request.getAccountNumber())
                 .orElseThrow(() -> new RuntimeException("Account not found"));
         if (account.isClosed()) {
@@ -85,7 +85,7 @@ public class AccountService {
             throw new RuntimeException("Insufficient funds");
         }
         accountRepository.save(account);
-        recordAccountTransaction(account, AccountTransactionType.WITHDRAW, amount);
+        recordAccountTransaction(account, OperationType.WITHDRAW, amount);
         return accountMapper.map(account);
     }
 
@@ -101,13 +101,13 @@ public class AccountService {
         accountRepository.saveAll(accounts);
     }
 
-    public AccountHistoryPaginationResponse getAccountHistory(final UUID accountId, final int pageSize, final int pageNumber) {
+    public List<AccountTransactionDto> getAccountHistory(final AccountNumberRequest request, final int pageSize, final int pageNumber) {
         final Pageable pageable = PageRequest.of(pageNumber, pageSize);
-        return new AccountHistoryPaginationResponse(
-                new PageInfo(pageSize, pageNumber + 1),
-                accountTransactionRepository.findByAccountId(accountId, pageable).stream()
-                        .map(accountTransactionMapper::map)
-                        .toList());
+        final Account account = accountRepository.findByAccountNumber(request.getAccountNumber())
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+        return accountTransactionRepository.findByAccountId(account.getId(), pageable).stream()
+                .map(accountTransactionMapper::map)
+                .toList();
     }
 
     public List<AccountDto> getAccountsByClientId(final UUID clientId) {
@@ -158,7 +158,7 @@ public class AccountService {
         return null;
     }
 
-    private void recordAccountTransaction(final Account account, final AccountTransactionType type, final BigDecimal amount) {
+    private void recordAccountTransaction(final Account account, final OperationType type, final BigDecimal amount) {
         final AccountTransaction tx = new AccountTransaction();
 
         tx.setAccount(account);
@@ -186,8 +186,8 @@ public class AccountService {
         return accountMapper.map(account);
     }
 
-    public AccountDto getAccountByAccountNumber(final String accountNumber) {
-        final Account account = accountRepository.findByAccountNumber(accountNumber)
+    public AccountDto getAccountByAccountNumber(final AccountNumberRequest accountNumberRequest) {
+        final Account account = accountRepository.findByAccountNumber(accountNumberRequest.getAccountNumber())
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
         return accountMapper.map(account);

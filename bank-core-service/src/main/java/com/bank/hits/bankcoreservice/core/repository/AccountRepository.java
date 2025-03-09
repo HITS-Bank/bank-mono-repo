@@ -20,4 +20,5 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     Optional<Account> findByClientAndAccountType(final Client client, final AccountType accountType);
 
     Optional<Account> findByAccountNumber(String accountNumber);
+
 }
