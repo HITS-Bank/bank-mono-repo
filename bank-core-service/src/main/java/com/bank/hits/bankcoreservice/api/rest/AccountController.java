@@ -56,7 +56,7 @@ public class AccountController {
         return ResponseEntity.ok(accountService.getAllClientAccounts(userId, pageSize, pageNumber - 1));
     }
 
-    @GetMapping(value = ApiConstants.GET_ACCOUNT_BY_ACCOUNT_NUMBER, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = ApiConstants.GET_ACCOUNT_BY_ACCOUNT_NUMBER, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AccountDto> getAccount(@RequestBody final AccountNumberRequest accountNumberRequest) {
         return ResponseEntity.ok(accountService.getAccountByAccountNumber(accountNumberRequest));
     }

@@ -15,6 +15,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import com.bank.hits.bankcoreservice.api.enums.AccountType;
 import com.bank.hits.bankcoreservice.core.entity.Client;
+import org.hibernate.annotations.NaturalId;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -27,6 +28,9 @@ public class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @NaturalId
+    @Column(unique = true)
     private String accountNumber;
     @ManyToOne
     @JoinColumn(name = "client_id", nullable = false)
