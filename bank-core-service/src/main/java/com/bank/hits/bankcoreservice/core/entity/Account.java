@@ -31,7 +31,7 @@ public class Account {
     @ManyToOne
     @JoinColumn(name = "client_id", nullable = false)
     private Client client;
-    private BigDecimal balance;
+    private BigDecimal balance = BigDecimal.ZERO;
     private boolean blocked;
     private boolean closed;
 

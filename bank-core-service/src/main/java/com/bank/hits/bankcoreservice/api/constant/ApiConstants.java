@@ -24,7 +24,7 @@ public class ApiConstants {
     // Эндпоинты для работы с транзакциями
     public static final String DEPOSIT = "/top_up"; // POST /accounts/deposit
     public static final String WITHDRAW = "/withdraw"; // POST /accounts/withdraw
-    public static final String ACCOUNT_HISTORY = "/{accountId}/operation_history"; // GET /accounts/{accountId}/history
+    public static final String ACCOUNT_HISTORY = "/operation_history"; // GET /accounts/{accountId}/history
 
 
 

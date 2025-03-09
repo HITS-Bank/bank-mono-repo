@@ -73,7 +73,7 @@ public class AccountController {
 
     @PostMapping(value = ApiConstants.ACCOUNT_HISTORY, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<AccountTransactionDto>> getAccountHistory(@RequestBody final AccountNumberRequest request, @RequestParam final int pageSize,
-                                                                              @RequestParam final int pageNumber) {
+                                                                         @RequestParam final int pageNumber) {
         return ResponseEntity.ok(accountService.getAccountHistory(request, pageSize, pageNumber - 1));
     }
 
