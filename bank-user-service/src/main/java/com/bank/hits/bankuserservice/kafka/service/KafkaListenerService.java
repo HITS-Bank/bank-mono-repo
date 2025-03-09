@@ -1,5 +1,6 @@
 package com.bank.hits.bankuserservice.kafka.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,7 +9,6 @@ import org.apache.kafka.common.header.Header;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import com.bank.hits.bankuserservice.common.dto.UserDto;
-import com.bank.hits.bankuserservice.kafka.message.CreditUserInfoRequestPayload;
 import com.bank.hits.bankuserservice.kafka.message.InformationAboutBlockingDTO;
 import com.bank.hits.bankuserservice.profile.service.ProfileService;
 
@@ -25,7 +25,7 @@ public class KafkaListenerService {
     private final KafkaProfileService kafkaProfileService;
 
     @KafkaListener(topics = "credit.user.info.request", groupId = "user-service-group")
-    public void listenCreditUserInfoRequest(ConsumerRecord<String, String> record) {
+    public void listenCreditUserInfoRequest(ConsumerRecord<String, String> record) throws JsonProcessingException {
         Header header = record.headers().lastHeader("correlation_id");
         if (header == null) {
             log.warn("Получено сообщение без заголовка correlation_id");

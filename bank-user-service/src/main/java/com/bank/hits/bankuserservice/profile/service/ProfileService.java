@@ -1,5 +1,6 @@
 package com.bank.hits.bankuserservice.profile.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -41,7 +42,7 @@ public class ProfileService {
     }
 
     @Transactional
-    public void banUser(UUID employeeId, UUID userId) {
+    public void banUser(UUID employeeId, UUID userId) throws JsonProcessingException {
         UserEntity initiator = userRepository
                 .findById(employeeId)
                 .orElseThrow(() -> new InitiatorUserNotFoundException(UserServiceExceptionMessage.INITIATOR_NOT_FOUND));
@@ -70,7 +71,7 @@ public class ProfileService {
     }
 
     @Transactional
-    public void unbanUser(UUID employeeId, UUID userId) {
+    public void unbanUser(UUID employeeId, UUID userId) throws JsonProcessingException {
         UserEntity initiator = userRepository
                 .findById(employeeId)
                 .orElseThrow(() -> new InitiatorUserNotFoundException(UserServiceExceptionMessage.INITIATOR_NOT_FOUND));

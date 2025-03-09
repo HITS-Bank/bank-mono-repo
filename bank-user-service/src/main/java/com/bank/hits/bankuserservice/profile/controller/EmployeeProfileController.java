@@ -1,5 +1,6 @@
 package com.bank.hits.bankuserservice.profile.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +31,7 @@ public class EmployeeProfileController {
     public ResponseEntity<Void> ban(
             @PathVariable UUID userId,
             HttpServletRequest httpServletRequest
-    ) {
+    ) throws JsonProcessingException {
         UUID employeeId = jwtUtils.extractUserIdFromRequest(httpServletRequest);
         profileService.banUser(employeeId, userId);
         return ResponseEntity.ok().build();
@@ -40,7 +41,7 @@ public class EmployeeProfileController {
     public ResponseEntity<Void> unban(
             @PathVariable UUID userId,
             HttpServletRequest httpServletRequest
-    ) {
+    ) throws JsonProcessingException {
         UUID employeeId = jwtUtils.extractUserIdFromRequest(httpServletRequest);
         profileService.unbanUser(employeeId, userId);
         return ResponseEntity.ok().build();
