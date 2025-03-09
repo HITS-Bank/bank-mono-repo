@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Header;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -31,10 +32,8 @@ import javax.jms.JMSException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -46,6 +45,7 @@ import java.util.stream.Collectors;
 public class CreditApplicationServiceImpl implements CreditApplicationService {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
+
     private final Map<String, SemaphoreResponsePair> semaphoreMap = new ConcurrentHashMap<>();
 
     private final CreditTariffRepository creditTariffRepository;
@@ -93,7 +93,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         CreditApplicationResponseDTO.TariffDTO tariffDTO = new CreditApplicationResponseDTO.TariffDTO();
         tariffDTO.setId(tariff.getId());
         tariffDTO.setName(tariff.getName());
-        tariffDTO.setInterestRate(BigDecimal.valueOf(tariff.getInterestRate()));
+        tariffDTO.setInterestRate(tariff.getInterestRate());
         tariffDTO.setCreatedAt(tariff.getCreatedAt().toLocalDateTime());
         responseDTO.setTariff(tariffDTO);
 
@@ -138,6 +138,33 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         response.setLoans(loans);
         response.setPageInfo(pageInfo);
 
+        return response;
+    }
+
+    public CreditApplicationResponseDTO getCreditByNumber(String number)
+    {
+        Optional<CreditHistory> credit =  creditHistoryRepository.findByLoanNumber(number);
+        if(!credit.isPresent())
+        {
+            throw new NoSuchElementException("Не удалось найти кредит с таким номером");
+        }
+        CreditTariff creditTariff = creditTariffRepository.findById(credit.get().getTariffId())
+                .orElseThrow(() -> new NoSuchElementException("Не удалось найти тариф для кредита"));
+        CreditApplicationResponseDTO response = new CreditApplicationResponseDTO();
+        response.setNumber(credit.get().getLoanNumber());
+        response.setAmount(credit.get().getTotalAmount());
+        CreditApplicationResponseDTO.TariffDTO tariffDTO = new CreditApplicationResponseDTO.TariffDTO();
+        tariffDTO.setId(creditTariff.getId());
+        tariffDTO.setName(creditTariff.getName());
+        tariffDTO.setInterestRate(creditTariff.getInterestRate());
+        tariffDTO.setCreatedAt(creditTariff.getCreatedAt().toLocalDateTime());
+        response.setTariff(tariffDTO);
+        response.setCurrentDebt(credit.get().getRemainingDebt());
+        Integer monthsBetween = Math.toIntExact(ChronoUnit.MONTHS.between(credit.get().getStartDate(), credit.get().getEndDate()));
+        response.setTermInMonths(monthsBetween);
+        response.setBankAccountNumber(credit.get().getLoanNumber());
+        response.setPaymentAmount(credit.get().getMonthlyPayment());
+        response.setPaymentSum(credit.get().getMonthlyPayment().multiply(BigDecimal.valueOf(monthsBetween)));
         return response;
     }
 
