@@ -85,6 +85,9 @@ public class CreditService {
         transaction.setTransactionType(CreditTransactionType.CREDIT_DEPOSIT);
         creditContractTransactionRepository.save(transaction);
 
+        creditAccount.setBalance(creditAccount.getBalance().add(creditContract.getCreditAmount()));
+        accountRepository.save(creditAccount);
+
         kafkaProducerService.sendCreditAccountCreatedEvent(creditContract, creditAccount);
     }
 
