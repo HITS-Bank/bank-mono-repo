@@ -1,5 +1,6 @@
 package com.bank.hits.bankcoreservice.core.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -27,6 +28,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 @Slf4j
 @Service
@@ -45,25 +47,31 @@ public class AccountService {
 
     public AccountDto openAccount(final UUID clientId) {
         final String generatedAccountNumber = accountNumberGenerator.generateAccountNumber();
-        final Client client = clientRepository.findById(clientId)
-                .orElseThrow(() -> new RuntimeException("Client not found"));
+        final Client client = clientRepository.findByClientId(clientId)
+                .orElse(createClient(clientId));
         final Account account = new Account(client, generatedAccountNumber);
         accountRepository.save(account);
         return accountMapper.map(account);
     }
 
+    private Client createClient(final UUID clientId) {
+        Client client = new Client();
+        client.setClientId(clientId);
+        return clientRepository.save(client);
+    }
+
     public void closeAccount(final CloseAccountRequest request) {
         final Account account = accountRepository.findByAccountNumber(request.getAccountNumber())
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
         account.setClosed(true);
         accountRepository.save(account);
     }
 
     public AccountDto deposit(final TopUpRequest request) {
         final Account account = accountRepository.findByAccountNumber(request.getAccountNumber())
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
         if (account.isClosed()) {
-            throw new RuntimeException("Account is closed");
+            throw new EntityNotFoundException("Account is closed");
         }
         final var amount = new BigDecimal(request.getAmount());
         account.setBalance(account.getBalance().add(amount));
@@ -74,15 +82,15 @@ public class AccountService {
 
     public AccountDto withdraw(final WithdrawRequest request) {
         final Account account = accountRepository.findByAccountNumber(request.getAccountNumber())
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
         if (account.isClosed()) {
-            throw new RuntimeException("Account is closed");
+            throw new EntityNotFoundException("Account is closed");
         }
         final var amount = new BigDecimal(request.getAmount());
 
         account.setBalance(account.getBalance().subtract(amount));
         if (account.getBalance().compareTo(BigDecimal.ZERO) < 0) {
-            throw new RuntimeException("Insufficient funds");
+            throw new EntityNotFoundException("Insufficient funds");
         }
         accountRepository.save(account);
         recordAccountTransaction(account, OperationType.WITHDRAW, amount);
@@ -104,7 +112,7 @@ public class AccountService {
     public List<AccountTransactionDto> getAccountHistory(final AccountNumberRequest request, final int pageSize, final int pageNumber) {
         final Pageable pageable = PageRequest.of(pageNumber, pageSize);
         final Account account = accountRepository.findByAccountNumber(request.getAccountNumber())
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
         return accountTransactionRepository.findByAccountId(account.getId(), pageable).stream()
                 .map(accountTransactionMapper::map)
                 .toList();
@@ -134,10 +142,10 @@ public class AccountService {
         }
 
         final CreditContract creditContract = creditContractRepository.findById(repaymentRequest.getCreditContractId())
-                .orElseThrow(() -> new RuntimeException("Credit contract not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Credit contract not found"));
 
         final Account account = accountRepository.findById(creditContract.getAccount().getId())
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
 
         if (account.isClosed()) {
             throw new IllegalStateException("Account is closed");
@@ -182,13 +190,13 @@ public class AccountService {
 
     public AccountDto getAccountById(final UUID accountId) {
         final Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
         return accountMapper.map(account);
     }
 
     public AccountDto getAccountByAccountNumber(final AccountNumberRequest accountNumberRequest) {
         final Account account = accountRepository.findByAccountNumber(accountNumberRequest.getAccountNumber())
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
 
         return accountMapper.map(account);
     }

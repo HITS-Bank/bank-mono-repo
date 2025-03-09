@@ -26,7 +26,7 @@ public class ClientService {
     private final ClientMapper clientMapper;
 
     public ClientDto createClient(ClientDto clientDto) {
-        return clientMapper.map(clientRepository.save(new Client(clientDto.getClientId(), false)));
+        return clientMapper.map(clientRepository.save(new Client(clientDto.getClientId())));
     }
 
     public ClientInfoDto getClientInfo(final UUID clientId, final UUID employeeId) {
