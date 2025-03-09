@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/employee/auth")
+@RequestMapping("/users/employee/auth")
 @RequiredArgsConstructor
 public class EmployeeAuthController {
 
