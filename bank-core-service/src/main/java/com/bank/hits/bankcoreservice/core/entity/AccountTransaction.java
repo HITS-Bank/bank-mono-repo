@@ -10,8 +10,7 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import com.bank.hits.bankcoreservice.api.enums.AccountTransactionType;
-import com.bank.hits.bankcoreservice.core.entity.Account;
+import com.bank.hits.bankcoreservice.api.enums.OperationType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -33,6 +32,6 @@ public class AccountTransaction {
     private Account account;
 
     private BigDecimal amount;
-    private AccountTransactionType transactionType;
+    private OperationType transactionType;
     private LocalDateTime transactionDate;
 }

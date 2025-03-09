@@ -1,16 +1,15 @@
 package com.bank.hits.bankcoreservice.api.dto;
 
 import lombok.Data;
-import com.bank.hits.bankcoreservice.api.enums.AccountTransactionType;
+import com.bank.hits.bankcoreservice.api.enums.OperationType;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
 public class AccountTransactionDto {
-    private UUID accountTransactionId;
-    private UUID accountId;
-    private AccountTransactionType type;
+    private UUID id;
+    private OperationType type;
     private String amount;
-    private LocalDateTime transactionDate;
+    private LocalDateTime executedAt;
 }
