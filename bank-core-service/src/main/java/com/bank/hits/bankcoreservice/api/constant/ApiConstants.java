@@ -19,12 +19,12 @@ public class ApiConstants {
     // для сотрудников
     public static final String BLOCK_CLIENT_ACCOUNTS = "/{clientId}/block"; // POST /accounts/{clientId}/block
     public static final String UNBLOCK_CLIENT_ACCOUNTS = "/{clientId}/unblock"; // POST /accounts/{clientId}/unblock
-    public static final String CLIENT_INFO = "/{clientId}/info"; // GET /accounts/{clientId}/info
+    public static final String CLIENT_INFO = "/{userId}/list"; // GET /accounts/{clientId}/info
 
     // Эндпоинты для работы с транзакциями
     public static final String DEPOSIT = "/top_up"; // POST /accounts/deposit
     public static final String WITHDRAW = "/withdraw"; // POST /accounts/withdraw
-    public static final String ACCOUNT_HISTORY = "/{accountId}/operation_history"; // GET /accounts/{accountId}/history
+    public static final String ACCOUNT_HISTORY = "/operation_history"; // GET /accounts/{accountId}/history
 
 
 

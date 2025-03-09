@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,13 +19,13 @@ import java.util.UUID;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping(ApiConstants.CLIENTS_BASE)
+@RequestMapping(ApiConstants.ACCOUNTS_BASE)
 public class ClientController {
 
     private final ClientService clientService;
 
     @GetMapping(value = ApiConstants.CLIENT_INFO, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ClientInfoDto> getClientInfo(@PathVariable("clientId") final UUID clientId, @RequestParam final UUID employeeId) {
+    public ResponseEntity<ClientInfoDto> getClientInfo(@RequestHeader("userId") final UUID employeeId, @PathVariable("userId") final UUID clientId) {
         return ResponseEntity.ok(clientService.getClientInfo(clientId, employeeId));
     }
 

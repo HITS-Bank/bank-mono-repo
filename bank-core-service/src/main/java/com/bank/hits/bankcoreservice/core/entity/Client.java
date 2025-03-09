@@ -21,10 +21,12 @@ public class Client {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    private UUID clientId;
+
     private final boolean isBlocked;
 
-    public Client(final UUID id) {
-        this.id = id;
+    public Client(final UUID clientId) {
+        this.clientId = clientId;
         this.isBlocked = false;
     }
 
