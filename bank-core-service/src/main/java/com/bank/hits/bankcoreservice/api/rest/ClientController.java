@@ -2,6 +2,7 @@ package com.bank.hits.bankcoreservice.api.rest;
 
 import com.bank.hits.bankcoreservice.api.constant.ApiConstants;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,13 +23,13 @@ public class ClientController {
 
     private final ClientService clientService;
 
-    @GetMapping(ApiConstants.CLIENT_INFO)
+    @GetMapping(value = ApiConstants.CLIENT_INFO, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ClientInfoDto> getClientInfo(@PathVariable("clientId") final UUID clientId, @RequestParam final UUID employeeId) {
         return ResponseEntity.ok(clientService.getClientInfo(clientId, employeeId));
     }
 
     // create client
-    @PostMapping(ApiConstants.CREATE_CLIENT)
+    @PostMapping(value = ApiConstants.CREATE_CLIENT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ClientDto> createClient(final ClientDto clientDto) {
         return ResponseEntity.ok(clientService.createClient(clientDto));
     }

@@ -1,8 +1,8 @@
 package com.bank.hits.bankuserservice.common.mapper;
 
+import org.mapstruct.Mapper;
 import com.bank.hits.bankuserservice.common.dto.UserDto;
 import com.bank.hits.bankuserservice.common.model.UserEntity;
-import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {
