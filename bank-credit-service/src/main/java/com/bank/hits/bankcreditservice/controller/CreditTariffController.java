@@ -35,15 +35,16 @@ public class CreditTariffController {
     @PostMapping("/employee/loan/tariffs/create")
     public ResponseEntity<?> createTariff(@RequestBody CreditTariff tariff,
                                           @RequestHeader("userId") String employeeUuid) throws Exception {
+        log.info("Запрос на создание тарифа");
         if (employeeUuid == null) {
             throw new SecurityException("Invalid token");
         }
-
+        log.info("Начинаем верификацию");
         boolean isVerified = employeeVerificationService.verifyEmployee(employeeUuid);
         if (!isVerified) {
             throw new ForbiddenAccessException("Employee is blocked");
         }
-
+        log.info("Верификация успешна");
         CreditTariff savedTariff = creditTariffService.saveTariff(tariff);
         CreditTariffDTO dto = creditTariffService.convertToDTO(savedTariff);
         return ResponseEntity.ok(dto);
