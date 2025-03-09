@@ -41,7 +41,7 @@ public class CreditService {
     private final KafkaProducerService kafkaProducerService;
 
     public List<CreditContractDto> getCreditsByClientId(final UUID clientId) {
-        final var client = clientRepository.findById(clientId)
+        final var client = clientRepository.findByClientId(clientId)
                 .orElseThrow(() -> new RuntimeException("Client not found"));
         return creditContractRepository.findByClient(client).stream()
                 .map(creditContractMapper::map)
@@ -49,7 +49,7 @@ public class CreditService {
     }
 
     public List<CreditTransactionDto> getCreditContractTransactionsByClientId(final UUID clientId) {
-        final Client client = clientRepository.findById(clientId)
+        final Client client = clientRepository.findByClientId(clientId)
                 .orElseThrow(() -> new RuntimeException("Client not found"));
         final List<CreditContract> creditContracts = creditContractRepository.findByClient(client);
         return creditContractTransactionRepository.findByCreditContractIn(creditContracts).stream()
@@ -61,7 +61,7 @@ public class CreditService {
     public void processCreditApproval(final CreditApprovedDto creditApprovedDto) {
         log.info("Processing credit approval for client {}", creditApprovedDto.getClientId());
 
-        final Client client = clientRepository.findById(creditApprovedDto.getClientId())
+        final Client client = clientRepository.findByClientId(creditApprovedDto.getClientId())
                         .orElse(clientRepository.save(new Client(creditApprovedDto.getClientId())));
 
         final Account creditAccount = accountRepository.findByClientAndAccountType(client, AccountType.CREDIT)

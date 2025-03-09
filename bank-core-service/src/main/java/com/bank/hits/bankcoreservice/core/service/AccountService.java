@@ -49,8 +49,9 @@ public class AccountService {
         final String generatedAccountNumber = accountNumberGenerator.generateAccountNumber();
         final Client client = clientRepository.findByClientId(clientId)
                 .orElse(createClient(clientId));
-        final Account account = new Account(client, generatedAccountNumber);
-        accountRepository.save(account);
+        Account account = new Account(client, generatedAccountNumber);
+        account.setBalance(BigDecimal.ZERO);
+        account = accountRepository.save(account);
         return accountMapper.map(account);
     }
 
@@ -73,8 +74,14 @@ public class AccountService {
         if (account.isClosed()) {
             throw new EntityNotFoundException("Account is closed");
         }
+        if (account.isBlocked()) {
+            throw new EntityNotFoundException("Account is blocked");
+        }
         final var amount = new BigDecimal(request.getAmount());
         account.setBalance(account.getBalance().add(amount));
+        if (account.getBalance().compareTo(BigDecimal.ZERO) < 0) {
+            throw new EntityNotFoundException("Insufficient funds");
+        }
         accountRepository.save(account);
         recordAccountTransaction(account, OperationType.TOP_UP, amount);
         return accountMapper.map(account);
@@ -85,6 +92,9 @@ public class AccountService {
                 .orElseThrow(() -> new EntityNotFoundException("Account not found"));
         if (account.isClosed()) {
             throw new EntityNotFoundException("Account is closed");
+        }
+        if (account.isBlocked()) {
+            throw new EntityNotFoundException("Account is blocked");
         }
         final var amount = new BigDecimal(request.getAmount());
 
@@ -163,7 +173,7 @@ public class AccountService {
 
         creditContract.setRemainingAmount(creditContract.getRemainingAmount().max(BigDecimal.ZERO));
         creditContractRepository.save(creditContract);
-        return null;
+        return new CreditPaymentResponseDTO(true, account.getBalance().toString());
     }
 
     private void recordAccountTransaction(final Account account, final OperationType type, final BigDecimal amount) {
