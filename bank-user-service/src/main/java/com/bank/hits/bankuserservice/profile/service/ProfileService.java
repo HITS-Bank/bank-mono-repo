@@ -1,5 +1,12 @@
 package com.bank.hits.bankuserservice.profile.service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import com.bank.hits.bankuserservice.common.dto.UserDto;
 import com.bank.hits.bankuserservice.common.exception.ForbiddenActionException;
 import com.bank.hits.bankuserservice.common.exception.IncorrectActionException;
@@ -11,13 +18,6 @@ import com.bank.hits.bankuserservice.common.model.UserEntity;
 import com.bank.hits.bankuserservice.common.repository.UserRepository;
 import com.bank.hits.bankuserservice.kafka.service.KafkaProfileService;
 import com.bank.hits.bankuserservice.profile.dto.UserListRequest;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.UUID;
@@ -31,6 +31,14 @@ public class ProfileService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final KafkaProfileService kafkaProfileService;
+
+    public UserDto getSelfProfile(UUID userId) {
+        UserEntity user = userRepository
+                .findById(userId)
+                .orElseThrow(() -> new InitiatorUserNotFoundException(UserServiceExceptionMessage.INITIATOR_NOT_FOUND));
+
+        return userMapper.toDto(user);
+    }
 
     @Transactional
     public void banUser(UUID employeeId, UUID userId) {
@@ -109,14 +117,11 @@ public class ProfileService {
 
         if (StringUtils.hasText(role.name()) && StringUtils.hasText(nameQuery)) {
             userPage = userRepository.findByRoleAndFirstNameContainingIgnoreCase(role, nameQuery, pageRequest);
-        }
-        else if (StringUtils.hasText(role.name())) {
+        } else if (StringUtils.hasText(role.name())) {
             userPage = userRepository.findByRole(role, pageRequest);
-        }
-        else if (StringUtils.hasText(nameQuery)) {
+        } else if (StringUtils.hasText(nameQuery)) {
             userPage = userRepository.findByFirstNameContainingIgnoreCase(nameQuery, pageRequest);
-        }
-        else {
+        } else {
             userPage = userRepository.findAll(pageRequest);
         }
 

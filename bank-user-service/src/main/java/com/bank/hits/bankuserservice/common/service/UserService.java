@@ -1,13 +1,13 @@
 package com.bank.hits.bankuserservice.common.service;
 
-import com.bank.hits.bankuserservice.common.dto.UserDto;
-import com.bank.hits.bankuserservice.common.mapper.UserMapper;
-import com.bank.hits.bankuserservice.common.model.UserEntity;
-import com.bank.hits.bankuserservice.common.repository.UserRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.bank.hits.bankuserservice.common.dto.UserDto;
+import com.bank.hits.bankuserservice.common.mapper.UserMapper;
+import com.bank.hits.bankuserservice.common.model.UserEntity;
+import com.bank.hits.bankuserservice.common.repository.UserRepository;
 
 import java.util.Optional;
 import java.util.UUID;

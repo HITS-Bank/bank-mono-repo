@@ -1,16 +1,10 @@
 package com.bank.hits.bankuserservice.common.exception.handler;
 
-import com.bank.hits.bankuserservice.common.exception.ForbiddenActionException;
-import com.bank.hits.bankuserservice.common.exception.IncorrectActionException;
-import com.bank.hits.bankuserservice.common.exception.InitiatorUserNotFoundException;
-import com.bank.hits.bankuserservice.common.exception.InvalidCredentialsException;
-import com.bank.hits.bankuserservice.common.exception.UnauthorizedException;
-import com.bank.hits.bankuserservice.common.exception.UserAlreadyExistsException;
-import com.bank.hits.bankuserservice.common.exception.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import com.bank.hits.bankuserservice.common.exception.*;
 
 import java.time.LocalDateTime;
 import java.util.Map;

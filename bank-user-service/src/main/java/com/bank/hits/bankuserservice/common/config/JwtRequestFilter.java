@@ -1,8 +1,5 @@
 package com.bank.hits.bankuserservice.common.config;
 
-import com.bank.hits.bankuserservice.common.dto.UserDto;
-import com.bank.hits.bankuserservice.common.service.UserService;
-import com.bank.hits.bankuserservice.common.util.JwtUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,6 +12,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import com.bank.hits.bankuserservice.common.dto.UserDto;
+import com.bank.hits.bankuserservice.common.service.UserService;
+import com.bank.hits.bankuserservice.common.util.JwtUtils;
 
 import java.io.IOException;
 import java.util.Collections;

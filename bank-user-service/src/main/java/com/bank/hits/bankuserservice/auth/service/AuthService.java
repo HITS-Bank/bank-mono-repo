@@ -1,25 +1,21 @@
 package com.bank.hits.bankuserservice.auth.service;
 
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 import com.bank.hits.bankuserservice.auth.dto.LoginRequest;
 import com.bank.hits.bankuserservice.auth.dto.RefreshTokenRequest;
 import com.bank.hits.bankuserservice.auth.dto.RegisterRequest;
 import com.bank.hits.bankuserservice.auth.dto.TokenResponse;
 import com.bank.hits.bankuserservice.common.dto.UserDto;
-import com.bank.hits.bankuserservice.common.exception.ForbiddenActionException;
-import com.bank.hits.bankuserservice.common.exception.InitiatorUserNotFoundException;
-import com.bank.hits.bankuserservice.common.exception.InvalidCredentialsException;
-import com.bank.hits.bankuserservice.common.exception.UnauthorizedException;
-import com.bank.hits.bankuserservice.common.exception.UserAlreadyExistsException;
+import com.bank.hits.bankuserservice.common.exception.*;
 import com.bank.hits.bankuserservice.common.exception.message.UserServiceExceptionMessage;
 import com.bank.hits.bankuserservice.common.mapper.UserMapper;
 import com.bank.hits.bankuserservice.common.model.Channel;
 import com.bank.hits.bankuserservice.common.model.UserEntity;
 import com.bank.hits.bankuserservice.common.repository.UserRepository;
 import com.bank.hits.bankuserservice.common.util.JwtUtils;
-import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
 
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;

@@ -1,6 +1,5 @@
 package com.bank.hits.bankuserservice.common.util;
 
-import com.bank.hits.bankuserservice.common.dto.UserDto;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -9,6 +8,7 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import com.bank.hits.bankuserservice.common.dto.UserDto;
 
 import java.security.Key;
 import java.util.Date;

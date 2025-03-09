@@ -1,8 +1,5 @@
 package com.bank.hits.bankuserservice.auth.controller;
 
-import com.bank.hits.bankuserservice.auth.dto.RegisterRequest;
-import com.bank.hits.bankuserservice.auth.service.AuthService;
-import com.bank.hits.bankuserservice.common.util.JwtUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +8,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.bank.hits.bankuserservice.auth.dto.RegisterRequest;
+import com.bank.hits.bankuserservice.auth.service.AuthService;
+import com.bank.hits.bankuserservice.common.util.JwtUtils;
 
 import java.util.UUID;
 
