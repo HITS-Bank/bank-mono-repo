@@ -15,20 +15,20 @@ public class EmployeeService {
 
     public boolean isEmployeeBlocked(final UUID employeeId) {
         final Employee employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+                .orElse(employeeRepository.save(new Employee()));
         return employee.isBlocked();
     }
 
     public void blockEmployee(final UUID employeeId) {
         final Employee employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+                .orElse(employeeRepository.save(new Employee()));
         employee.setBlocked(true);
         employeeRepository.save(employee);
     }
 
     public void unblockEmployee(final UUID employeeId) {
         final Employee employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+                .orElse(employeeRepository.save(new Employee()));
         employee.setBlocked(false);
         employeeRepository.save(employee);
     }
