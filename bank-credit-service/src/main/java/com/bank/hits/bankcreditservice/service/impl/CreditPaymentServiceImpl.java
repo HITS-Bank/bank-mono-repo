@@ -48,7 +48,7 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
     @Override
     @Transactional
     public boolean processPayment(CreditPaymentRequestDTO request) throws Exception {
-        CreditHistory creditHistory = creditHistoryRepository.findByLoanNumber(request.getLoanNumber())
+        CreditHistory creditHistory = creditHistoryRepository.findByNumber(request.getLoanNumber())
                 .orElseThrow(() -> new RuntimeException("Кредит с таким номером не найден"));
         String correlationId = sendPaymentRequest(creditHistory.getId(), request.getPaymentAmount());
         Semaphore semaphore = new Semaphore(0);

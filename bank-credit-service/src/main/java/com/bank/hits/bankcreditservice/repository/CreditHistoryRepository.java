@@ -16,7 +16,7 @@ public interface CreditHistoryRepository extends JpaRepository<CreditHistory, UU
 
     List<CreditHistory> findByClientUuid(UUID clientUuid);
 
-    Optional<CreditHistory> findByLoanNumber(String loanNumber);
+    Optional<CreditHistory> findByNumber(String number);
 
     List<CreditHistory> findByRemainingDebtGreaterThan(BigDecimal amount);
 
