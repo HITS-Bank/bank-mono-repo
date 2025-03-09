@@ -15,7 +15,7 @@ spring:
       ddl-auto: update
     show-sql: true
   redis:
-    host: localhost
+    host: ${REDIS_HOST:redis_container2}
     port: 6379
     timeout: 6000
     lettuce:

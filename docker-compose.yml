@@ -165,7 +165,7 @@ services:
         SPRING_DATASOURCE_USERNAME: postgres
         SPRING_DATASOURCE_PASSWORD: 12345
         SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-        REDIS_HOST: redis
+        REDIS_HOST: redis_container2
         REDIS_PORT: 6379
         APP_PORT: 9445
 

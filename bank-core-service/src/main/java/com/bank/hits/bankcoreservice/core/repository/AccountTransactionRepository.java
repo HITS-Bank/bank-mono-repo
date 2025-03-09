@@ -13,4 +13,5 @@ import java.util.UUID;
 public interface AccountTransactionRepository extends JpaRepository<AccountTransaction, UUID> {
     List<AccountTransaction> findByAccountId(final UUID id);
     Page<AccountTransaction> findByAccountId(final UUID id, final Pageable pageable);
+    Page<AccountTransaction> findByAccountId(final String accountNumber, final Pageable pageable);
 }
