@@ -9,11 +9,13 @@ spring:
         - id: bank-core-service
           uri: http://core-app:9444
           predicates:
-            - Path=/users/**
+            - Path=/core/**
         - id: bank-users-service
           uri: http://user-app:9447
           predicates:
             - Path=/users/**
 
+server:
+  port: ${APP_PORT:9446}
 jwt:
   secret: 9a4f2c8d3b7a1e6f45c8a0b3f267d8b1ad1f123a9d2b5f8e3a9c8b5f6v8a3d9

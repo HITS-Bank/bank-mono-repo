@@ -3,7 +3,7 @@ package com.bank.hits.bankcoreservice.api.constant;
 public class ApiConstants {
 
     // Версия API
-    public static final String API_VERSION = "/core/api";
+    public static final String API_VERSION = "/core";
 
     // Базовые пути контроллеров
     public static final String ACCOUNTS_BASE = API_VERSION + "/accounts";
@@ -22,14 +22,14 @@ public class ApiConstants {
     public static final String CLIENT_INFO = "/{clientId}/info"; // GET /accounts/{clientId}/info
 
     // Эндпоинты для работы с транзакциями
-    public static final String DEPOSIT = "/deposit"; // POST /accounts/deposit
+    public static final String DEPOSIT = "/top_up"; // POST /accounts/deposit
     public static final String WITHDRAW = "/withdraw"; // POST /accounts/withdraw
-    public static final String ACCOUNT_HISTORY = "/{accountId}/history"; // GET /accounts/{accountId}/history
+    public static final String ACCOUNT_HISTORY = "/{accountId}/operation_history"; // GET /accounts/{accountId}/history
 
 
 
     public static final String GET_ACCOUNT = "/accounts/{accountId}";
-    public static final String GET_ACCOUNTS = "/accounts/all";
+    public static final String GET_ACCOUNTS = "/{userId}/list";
     public static final String GET_ACCOUNT_BY_ACCOUNT_NUMBER = "/accountNumber"; // GET /api/v1/accounts/accountNumber/
     public static final String CREATE_CLIENT = "/client/create";
 }

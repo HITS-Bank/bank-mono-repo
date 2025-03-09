@@ -1,5 +1,7 @@
 package com.bank.hits.bankcoreservice.core.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import com.bank.hits.bankcoreservice.api.enums.AccountType;
@@ -12,6 +14,7 @@ import java.util.UUID;
 
 @Repository
 public interface AccountRepository extends JpaRepository<Account, UUID> {
+    Page<Account> findByClientId(final UUID clientId, Pageable pageable);
     List<Account> findByClientId(final UUID clientId);
 
     Optional<Account> findByClientAndAccountType(final Client client, final AccountType accountType);

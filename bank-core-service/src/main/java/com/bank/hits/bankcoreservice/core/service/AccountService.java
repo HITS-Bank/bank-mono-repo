@@ -2,6 +2,9 @@ package com.bank.hits.bankcoreservice.core.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import com.bank.hits.bankcoreservice.api.dto.*;
 import com.bank.hits.bankcoreservice.api.enums.AccountTransactionType;
@@ -25,7 +28,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
 @Slf4j
 @Service
 @AllArgsConstructor
@@ -58,7 +60,7 @@ public class AccountService {
     }
 
     public AccountDto deposit(final TransactionRequest request) {
-        final Account account = accountRepository.findById(request.getAccountId())
+        final Account account = accountRepository.findByAccountNumber(request.getAccountNumber())
                 .orElseThrow(() -> new RuntimeException("Account not found"));
         if (account.isClosed()) {
             throw new RuntimeException("Account is closed");
@@ -71,7 +73,7 @@ public class AccountService {
     }
 
     public AccountDto withdraw(final TransactionRequest request) {
-        final Account account = accountRepository.findById(request.getAccountId())
+        final Account account = accountRepository.findByAccountNumber(request.getAccountNumber())
                 .orElseThrow(() -> new RuntimeException("Account not found"));
         if (account.isClosed()) {
             throw new RuntimeException("Account is closed");
@@ -99,10 +101,13 @@ public class AccountService {
         accountRepository.saveAll(accounts);
     }
 
-    public List<AccountTransactionDto> getAccountHistory(final UUID accountId) {
-        return accountTransactionRepository.findByAccountId(accountId).stream()
-                .map(accountTransactionMapper::map)
-                .toList();
+    public AccountHistoryPaginationResponse getAccountHistory(final UUID accountId, final int pageSize, final int pageNumber) {
+        final Pageable pageable = PageRequest.of(pageNumber, pageSize);
+        return new AccountHistoryPaginationResponse(
+                new PageInfo(pageSize, pageNumber + 1),
+                accountTransactionRepository.findByAccountId(accountId, pageable).stream()
+                        .map(accountTransactionMapper::map)
+                        .toList());
     }
 
     public List<AccountDto> getAccountsByClientId(final UUID clientId) {
@@ -188,9 +193,13 @@ public class AccountService {
         return accountMapper.map(account);
     }
 
-    public List<AccountDto> getAllClientAccounts(final UUID clientId) {
-        final List<Account> accounts = accountRepository.findByClientId(clientId);
+    public AccountsPaginationResponse getAllClientAccounts(final UUID clientId, int pageSize, int pageNumber) {
+        final Pageable pageable = PageRequest.of(pageNumber, pageSize);
 
-        return accounts.stream().map(accountMapper::map).collect(Collectors.toList());
+        final Page<Account> accounts = accountRepository.findByClientId(clientId, pageable);
+
+        return new AccountsPaginationResponse(
+                new PageInfo(pageSize, pageNumber + 1),
+                accounts.stream().map(accountMapper::map).collect(Collectors.toList()));
     }
 }

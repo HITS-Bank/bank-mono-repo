@@ -31,3 +31,6 @@ jwt:
     expirationMillis: 3600000 # 1hr
   refreshToken:
     expirationMillis: 2592000000 # 30d
+
+server:
+  port: ${APP_PORT:9447}
