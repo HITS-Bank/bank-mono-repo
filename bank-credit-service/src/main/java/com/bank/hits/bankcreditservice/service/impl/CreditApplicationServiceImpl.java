@@ -3,12 +3,7 @@ package com.bank.hits.bankcreditservice.service.impl;
 import com.bank.hits.bankcreditservice.exception.CreditCreationException;
 import com.bank.hits.bankcreditservice.model.CreditHistory;
 import com.bank.hits.bankcreditservice.model.CreditTariff;
-import com.bank.hits.bankcreditservice.model.DTO.CreditApplicationRequestDTO;
-import com.bank.hits.bankcreditservice.model.DTO.CreditApplicationResponseDTO;
-import com.bank.hits.bankcreditservice.model.DTO.CreditApprovedDTO;
-import com.bank.hits.bankcreditservice.model.DTO.CreditClientInfoResponseDTO;
-import com.bank.hits.bankcreditservice.model.DTO.PageInfoDTO;
-import com.bank.hits.bankcreditservice.model.DTO.UserLoansResponseDTO;
+import com.bank.hits.bankcreditservice.model.DTO.*;
 import com.bank.hits.bankcreditservice.repository.CreditHistoryRepository;
 import com.bank.hits.bankcreditservice.repository.CreditTariffRepository;
 import com.bank.hits.bankcreditservice.service.api.CreditApplicationService;
@@ -84,7 +79,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         }
         CreditClientInfoResponseDTO clientInfo = objectMapper.readValue(pair.getResponse(), CreditClientInfoResponseDTO.class);
         log.info("clientInfo = {}", clientInfo);
-        boolean approved = evaluateCreditApplication(request, clientInfo);
+        boolean approved = approveCredit(request, clientInfo);
         log.info("approved - {}", approved);
         if(!approved)
         {
@@ -240,11 +235,47 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         return amount.multiply(monthlyRate).multiply(onePlusRatePowerN)
                 .divide(onePlusRatePowerN.subtract(BigDecimal.ONE), 2, RoundingMode.HALF_UP);
     }
-    private boolean evaluateCreditApplication(CreditApplicationRequestDTO request, CreditClientInfoResponseDTO clientInfo) {
-        boolean hasActiveAccount = clientInfo.getAccounts().stream()
-                .anyMatch(account -> !account.isBlocked() && !account.isClosed());
-        boolean creditWithinLimit = clientInfo.getCreditHistory().getTotalCreditAmount().compareTo(request.getAmount()) < 0;
-        return hasActiveAccount && creditWithinLimit;
+
+    public boolean approveCredit(CreditApplicationRequestDTO request, CreditClientInfoResponseDTO clientInfo) {
+        if (hasOverdueCredits(clientInfo.getCredits())) {
+            return false;
+        }
+        if (!isAccountValid(request.getBankAccountNumber(), clientInfo.getAccounts())) {
+            return false;
+        }
+        if (isCreditLoadTooHigh(clientInfo.getCredits(), request.getAmount())) {
+            return false;
+        }
+        return true;
+    }
+
+    private boolean hasOverdueCredits(List<CreditContractDto> credits) {
+        LocalDateTime now = LocalDateTime.now();
+        for (CreditContractDto credit : credits) {
+            if (credit.getEndDate().isBefore(now) && credit.getCreditRepaymentAmount().compareTo(BigDecimal.ZERO) > 0) {
+                return true; // Есть просроченные кредиты
+            }
+        }
+        return false;
+    }
+
+    private boolean isAccountValid(String accountNumber, List<AccountInfoDTO> accounts) {
+        for (AccountInfoDTO account : accounts) {
+            if (account.getAccountNumber().equals(accountNumber)) {
+                return !account.isBlocked() && !account.isClosed() && new BigDecimal(account.getBalance()).compareTo(BigDecimal.ZERO) > 0;
+            }
+        }
+        return false;
+    }
+
+    private boolean isCreditLoadTooHigh(List<CreditContractDto> credits, BigDecimal requestedAmount) {
+        BigDecimal totalDebt = BigDecimal.ZERO;
+        for (CreditContractDto credit : credits) {
+            totalDebt = totalDebt.add(credit.getCreditAmount());
+        }
+
+        BigDecimal debtLimit = new BigDecimal("50000"); // Условный порог долговой нагрузки
+        return totalDebt.add(requestedAmount).compareTo(debtLimit) > 0;
     }
 
     private String sendClientInfoRequest(String clientUuid) throws JMSException {
