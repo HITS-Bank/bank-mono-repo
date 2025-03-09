@@ -63,6 +63,7 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
         }
 
         CreditPaymentResponseDTO responseDTO = objectMapper.readValue(pair.getResponse(), CreditPaymentResponseDTO.class);
+        log.info("responseDTO:", responseDTO);
         if (responseDTO.isApproved()) {
             creditHistory.setRemainingDebt(creditHistory.getRemainingDebt().subtract(responseDTO.getApprovedAmount()));
             creditHistoryRepository.save(creditHistory);
@@ -73,6 +74,7 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
     }
 
     private String sendPaymentRequest(UUID creditId, BigDecimal amount) {
+        log.info("pay started");
         String correlationId = UUID.randomUUID().toString();
         try {
             CreditPaymentProcessingDTO paymentDTO = new CreditPaymentProcessingDTO();
@@ -80,6 +82,7 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
             paymentDTO.setCreditAmount(amount);
 
             String message = objectMapper.writeValueAsString(paymentDTO);
+            log.info("message при отправке оплаты: {}", message);
             ProducerRecord<String, String> record = new ProducerRecord<>(creditPaymentRequestTopic, message);
             record.headers().add("correlation_id", correlationId.getBytes());
             kafkaTemplate.send(record);
@@ -92,6 +95,7 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
 
     @KafkaListener(topics = "${kafka.topics.credit-payment.response}", groupId = "creditPaymentGroup")
     public void receivePaymentResponse(ConsumerRecord<String, String> record) {
+        log.info("сообщение получено");
         Header header = record.headers().lastHeader("correlation_id");
         if (header == null) {
             log.warn("Получен ответ без заголовка correlation_id");
