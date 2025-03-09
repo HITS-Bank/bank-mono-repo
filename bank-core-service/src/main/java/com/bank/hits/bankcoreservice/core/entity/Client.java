@@ -1,13 +1,16 @@
 package com.bank.hits.bankcoreservice.core.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Setter;
 import lombok.With;
+import org.hibernate.annotations.NaturalId;
 
 import java.util.UUID;
 
@@ -21,6 +24,8 @@ public class Client {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @NaturalId
+    @Column(unique = true)
     private UUID clientId;
 
     private final boolean isBlocked;

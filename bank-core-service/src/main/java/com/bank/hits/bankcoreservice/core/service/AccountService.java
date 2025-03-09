@@ -23,6 +23,7 @@ import com.bank.hits.bankcoreservice.core.repository.CreditContractRepository;
 import com.bank.hits.bankcoreservice.core.repository.AccountTransactionRepository;
 import com.bank.hits.bankcoreservice.core.repository.CreditTransactionRepository;
 import com.bank.hits.bankcoreservice.core.utils.AccountNumberGenerator;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -44,20 +45,15 @@ public class AccountService {
     private final AccountMapper accountMapper;
 
 
+    @Transactional
     public AccountDto openAccount(final UUID clientId) {
         final String generatedAccountNumber = accountNumberGenerator.generateAccountNumber();
         final Client client = clientRepository.findByClientId(clientId)
-                .orElse(createClient(clientId));
+                .orElseGet(() -> clientRepository.save(new Client(clientId)));
         Account account = new Account(client, generatedAccountNumber);
         account.setBalance(BigDecimal.ZERO);
         account = accountRepository.save(account);
         return accountMapper.map(account);
-    }
-
-    private Client createClient(final UUID clientId) {
-        Client client = new Client();
-        client.setClientId(clientId);
-        return clientRepository.save(client);
     }
 
     public void closeAccount(final CloseAccountRequest request) {
