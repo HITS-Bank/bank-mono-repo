@@ -14,7 +14,7 @@ import com.bank.hits.bankuserservice.auth.service.AuthService;
 import com.bank.hits.bankuserservice.common.model.Channel;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/users/auth")
 @RequiredArgsConstructor
 public class AuthController {
 

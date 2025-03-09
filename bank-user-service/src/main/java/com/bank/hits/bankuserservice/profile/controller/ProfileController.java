@@ -13,7 +13,7 @@ import com.bank.hits.bankuserservice.profile.service.ProfileService;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/profile")
+@RequestMapping("/users/profile")
 @RequiredArgsConstructor
 public class ProfileController {
 

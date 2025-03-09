@@ -15,7 +15,7 @@ import com.bank.hits.bankuserservice.common.util.JwtUtils;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/employee/auth")
+@RequestMapping("/users/employee/auth")
 @RequiredArgsConstructor
 public class EmployeeAuthController {
 
