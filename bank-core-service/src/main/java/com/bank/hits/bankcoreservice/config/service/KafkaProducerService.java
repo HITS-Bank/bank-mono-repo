@@ -19,6 +19,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class KafkaProducerService {
 
+    private final ObjectMapper objectMapper;
     private final KafkaTemplate<String, String> kafkaTemplate;
 
     public void sendMessage(final String topic, final String message) {
@@ -27,8 +28,8 @@ public class KafkaProducerService {
 
     public void sendUserInfoForCredit(final ClientInfoDto clientInfoDto, UUID correlationId) {
         try {
-            final ObjectMapper objectMapper = new ObjectMapper();
             final String message = objectMapper.writeValueAsString(clientInfoDto);
+            log.info("message = {}", message);
             ProducerRecord<String, String> record = new ProducerRecord<>("credit.client.info.response", message);
             record.headers().add("event_type", "get_credit_client_info".getBytes());
             record.headers().add("correlation_id",(String.valueOf(correlationId).getBytes()));
@@ -47,7 +48,6 @@ public class KafkaProducerService {
                     creditAccount.getId(),
                     String.valueOf(creditContract.getCreditAmount())
             );
-            final ObjectMapper objectMapper = new ObjectMapper();
             final String message = objectMapper.writeValueAsString(event);
             kafkaTemplate.send("credit.account.created.response", message);
             log.info("Sent CREDIT_ACCOUNT_CREATED event: {}", event);
@@ -58,7 +58,6 @@ public class KafkaProducerService {
 
     public void sendCreditPaymentResponse(final CreditPaymentResponseDTO response, final UUID correlationId) {
         try {
-            final ObjectMapper objectMapper = new ObjectMapper();
             final String message = objectMapper.writeValueAsString(response);
             kafkaTemplate.send("credit.payment.response", message);
             log.info("Sent CREDIT_ACCOUNT_CREATED event: {}", response);

@@ -1,7 +1,6 @@
 package com.bank.hits.bankcreditservice.controller;
 
 import com.bank.hits.bankcreditservice.exception.ForbiddenAccessException;
-import com.bank.hits.bankcreditservice.model.CreditTariff;
 import com.bank.hits.bankcreditservice.model.DTO.CreditApplicationRequestDTO;
 import com.bank.hits.bankcreditservice.model.DTO.CreditApplicationResponseDTO;
 import com.bank.hits.bankcreditservice.model.DTO.CreditPaymentRequestDTO;
@@ -20,8 +19,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.Optional;
 
 @RestController
 @AllArgsConstructor

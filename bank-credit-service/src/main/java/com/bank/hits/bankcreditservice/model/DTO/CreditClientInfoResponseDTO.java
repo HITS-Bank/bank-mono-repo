@@ -7,7 +7,9 @@ import java.util.UUID;
 
 @Data
 public class CreditClientInfoResponseDTO {
-    private UUID userId;
+    private UUID clientId;
     private List<AccountInfoDTO> accounts;
-    private CreditHistoryDTO creditHistory;
+    private List<CreditContractDto> credits;
+    private List<CreditTransactionDto> creditTransactions;
+    private List<AccountTransactionDto> accountTransactions;
 }

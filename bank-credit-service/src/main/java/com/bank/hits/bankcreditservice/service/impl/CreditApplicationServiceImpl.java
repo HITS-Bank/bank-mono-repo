@@ -70,18 +70,22 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         }
         CreditTariff tariff = tariffOpt.get();
 
+        log.info("Отправка запроса на получение информации о клиенте");
         String correlationId = sendClientInfoRequest(clientUuid);
         Semaphore semaphore = semaphoreMap.get(correlationId).getSemaphore();
         boolean acquired = semaphore.tryAcquire(30, TimeUnit.SECONDS);
         if (!acquired) {
             throw new RuntimeException("Timeout waiting for client info response");
         }
+        log.info("Получен ответ");
         SemaphoreResponsePair pair = semaphoreMap.remove(correlationId);
         if (pair == null || pair.getResponse() == null) {
             throw new RuntimeException("No valid response received for client info");
         }
         CreditClientInfoResponseDTO clientInfo = objectMapper.readValue(pair.getResponse(), CreditClientInfoResponseDTO.class);
+        log.info("clientInfo = {}", clientInfo);
         boolean approved = evaluateCreditApplication(request, clientInfo);
+        log.info("approved - {}", approved);
         if(!approved)
         {
             throw new CreditCreationException("Вам отказано в кредите");
@@ -244,6 +248,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
     }
 
     private String sendClientInfoRequest(String clientUuid) throws JMSException {
+        log.info("Id клиента {}", clientUuid);
         String correlationId = UUID.randomUUID().toString();
         ProducerRecord<String, String> record = new ProducerRecord<>(creditClientInfoRequestTopic, clientUuid);
         record.headers().add("event_type", "get_credit_client_info".getBytes());
@@ -257,12 +262,14 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
 
     @KafkaListener(topics = "${kafka.topics.core-information.response}", groupId = "creditClientInfoGroup")
     public void receiveClientInfoResponse(ConsumerRecord<String, String> record) {
+        log.info("Получено сообщение clientInfo");
         Header header = record.headers().lastHeader("correlation_id");
         if (header == null) {
             log.warn("Получен ответ без заголовка correlation_id");
             return;
         }
         String correlationId = new String(header.value());
+        log.info("correlationId {}", correlationId);
         String response = record.value();
         SemaphoreResponsePair pair = semaphoreMap.get(correlationId);
         if (pair != null) {
