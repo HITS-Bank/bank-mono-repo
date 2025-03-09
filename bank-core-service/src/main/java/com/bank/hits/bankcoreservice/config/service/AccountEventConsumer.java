@@ -1,5 +1,6 @@
 package com.bank.hits.bankcoreservice.config.service;
 
+import com.bank.hits.bankcoreservice.api.dto.CloseAccountRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -31,7 +32,7 @@ public class AccountEventConsumer {
     private final ClientService clientService;
 
     @KafkaListener(topics = "create.account", groupId = "bank.group")
-    public void handleCreateAccount(final ConsumerRecord<String, OpenAccountDto> record) {
+    public void handleCreateAccount(final ConsumerRecord<String, UUID> record) {
         log.info("Received create.account event: {}", record.value());
         try {
             final AccountDto createdAccount = accountService.openAccount(record.value());
@@ -42,7 +43,7 @@ public class AccountEventConsumer {
     }
 
     @KafkaListener(topics = "close.account", groupId = "bank.group")
-    public void handleCloseAccount(final ConsumerRecord<String, UUID> record) {
+    public void handleCloseAccount(final ConsumerRecord<String, CloseAccountRequest> record) {
         log.info("Received close.account event: {}", record.value());
         try {
             accountService.closeAccount(record.value());

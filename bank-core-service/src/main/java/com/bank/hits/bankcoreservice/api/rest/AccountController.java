@@ -19,8 +19,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.bank.hits.bankcoreservice.api.dto.AccountDto;
 import com.bank.hits.bankcoreservice.api.dto.AccountTransactionDto;
-import com.bank.hits.bankcoreservice.api.dto.OpenAccountDto;
-import com.bank.hits.bankcoreservice.api.dto.TransactionRequest;
 import com.bank.hits.bankcoreservice.core.service.AccountService;
 
 import java.util.List;
