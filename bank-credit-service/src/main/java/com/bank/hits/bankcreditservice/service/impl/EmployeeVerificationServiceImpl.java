@@ -53,6 +53,7 @@ public class EmployeeVerificationServiceImpl implements EmployeeVerificationServ
             try {
                 ObjectMapper objectMapper = new ObjectMapper();
                 VerificationAnswerDTO responseDTO = objectMapper.readValue(pair.getResponse(), VerificationAnswerDTO.class);
+                log.info("responseDTO {}", responseDTO);
                 if (!responseDTO.isBlocked()) {
                     return true;
                 }
