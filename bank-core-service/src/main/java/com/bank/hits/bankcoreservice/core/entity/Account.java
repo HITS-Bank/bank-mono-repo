@@ -18,6 +18,7 @@ import com.bank.hits.bankcoreservice.core.entity.Client;
 import org.hibernate.annotations.NaturalId;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -45,6 +46,8 @@ public class Account {
 
     @Version
     private Long version;
+
+    private LocalDateTime createdDate = LocalDateTime.now();
 
     public Account(final Client client, final String accountNumber) {
         this.client = client;

@@ -141,30 +141,49 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         return response;
     }
 
-    public CreditApplicationResponseDTO getCreditByNumber(String number)
+    public UserLoansResponseDTO.LoanDTO getCreditByNumber(String number)
     {
-        Optional<CreditHistory> credit =  creditHistoryRepository.findByLoanNumber(number);
+        Optional<CreditHistory> credit = creditHistoryRepository.findByLoanNumber(number);
         if(!credit.isPresent())
         {
-            throw new NoSuchElementException("Не удалось найти кредит с таким номером");
+            throw new NoSuchElementException("Не удалось найти тариф с указанным номером");
         }
-        CreditTariff creditTariff = creditTariffRepository.findById(credit.get().getTariffId())
-                .orElseThrow(() -> new NoSuchElementException("Не удалось найти тариф для кредита"));
-        CreditApplicationResponseDTO response = new CreditApplicationResponseDTO();
-        response.setNumber(credit.get().getLoanNumber());
-        response.setAmount(credit.get().getTotalAmount());
+        CreditHistory request = credit.get();
+        /*
+        Optional<CreditTariff> tariffOpt = creditTariffRepository.findById(request.getTariffId());
+        if (tariffOpt.isEmpty()) {
+            throw new RuntimeException("Тариф не найден");
+        }
+        CreditTariff tariff = tariffOpt.get();
+
+        CreditApplicationResponseDTO responseDTO = new CreditApplicationResponseDTO();
+        responseDTO.setNumber(request.getLoanNumber());
         CreditApplicationResponseDTO.TariffDTO tariffDTO = new CreditApplicationResponseDTO.TariffDTO();
-        tariffDTO.setId(creditTariff.getId());
-        tariffDTO.setName(creditTariff.getName());
-        tariffDTO.setInterestRate(creditTariff.getInterestRate());
-        tariffDTO.setCreatedAt(creditTariff.getCreatedAt().toLocalDateTime());
-        response.setTariff(tariffDTO);
-        response.setCurrentDebt(credit.get().getRemainingDebt());
-        Integer monthsBetween = Math.toIntExact(ChronoUnit.MONTHS.between(credit.get().getStartDate(), credit.get().getEndDate()));
-        response.setTermInMonths(monthsBetween);
-        response.setBankAccountNumber(credit.get().getLoanNumber());
-        response.setPaymentAmount(credit.get().getMonthlyPayment());
-        response.setPaymentSum(credit.get().getMonthlyPayment().multiply(BigDecimal.valueOf(monthsBetween)));
+        tariffDTO.setId(tariff.getId());
+        tariffDTO.setName(tariff.getName());
+        tariffDTO.setInterestRate(tariff.getInterestRate());
+        tariffDTO.setCreatedAt(tariff.getCreatedAt().toLocalDateTime());
+
+        Integer monthsBetween = Math.toIntExact(ChronoUnit.MONTHS.between(request.getStartDate(), request.getEndDate()));
+
+        responseDTO.setTariff(tariffDTO);
+
+        responseDTO.setAmount(request.getTotalAmount());
+        responseDTO.setTermInMonths(monthsBetween);
+        responseDTO.setBankAccountNumber(request.getLoanNumber());
+
+        BigDecimal monthlyPayment = calculateMonthlyPayment(request.getTotalAmount(), tariff.getInterestRate(), monthsBetween);
+        responseDTO.setPaymentAmount(monthlyPayment);
+
+        BigDecimal totalPayment = monthlyPayment.multiply(BigDecimal.valueOf(monthsBetween));
+        responseDTO.setPaymentSum(totalPayment);
+
+        responseDTO.setNextPaymentDateTime(LocalDateTime.now().plusMonths(1));
+        responseDTO.setCurrentDebt(request.getTotalAmount().add(totalPayment.subtract(BigDecimal.valueOf(monthsBetween))));
+        return responseDTO;
+
+         */
+        UserLoansResponseDTO.LoanDTO response = convertToDTO(request);
         return response;
     }
 

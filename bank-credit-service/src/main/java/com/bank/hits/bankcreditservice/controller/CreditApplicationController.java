@@ -85,9 +85,9 @@ public class CreditApplicationController {
                 ResponseEntity.badRequest().body("Платёж не одобрен");
     }
 
-    @GetMapping("credit/{loan}")
-    public ResponseEntity<CreditApplicationResponseDTO> getTariffById(@PathVariable String loan) {
-        CreditApplicationResponseDTO tariff = creditApplicationService.getCreditByNumber(loan);
-        return ResponseEntity.ok(tariff);
+    @GetMapping("/loan/{loan}")
+    public ResponseEntity<UserLoansResponseDTO.LoanDTO> getTariffById(@PathVariable String loan) {
+        UserLoansResponseDTO.LoanDTO credit = creditApplicationService.getCreditByNumber(loan);
+        return ResponseEntity.ok(credit);
     }
 }
