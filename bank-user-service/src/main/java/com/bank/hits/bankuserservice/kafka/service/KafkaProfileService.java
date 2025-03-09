@@ -1,5 +1,7 @@
 package com.bank.hits.bankuserservice.kafka.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -21,35 +23,36 @@ public class KafkaProfileService {
     private final String CLIENT_TOPIC_PART = "client";
     private final String EMPLOYEE_TOPIC_PART = "employee";
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
 
-    public void sendUserBanned(String correlationId, InformationAboutBlockingDTO message) {
+    public void sendUserBanned(String correlationId, InformationAboutBlockingDTO message) throws JsonProcessingException {
         final String topic = "credit.user.info.response";
         sendMessageWithCorrelationId(topic, correlationId, message);
     }
 
-    public void sendClientBanned(UUID userId) {
+    public void sendClientBanned(UUID userId) throws JsonProcessingException {
         final String topic = getTopicName(BAN_ACTION_TOPIC_PART, CLIENT_TOPIC_PART);
         UserUUIDMessage message = new UserUUIDMessage(userId.toString());
-        kafkaTemplate.send(topic, message);
+        kafkaTemplate.send(topic, objectMapper.writeValueAsString(message));
     }
 
-    public void sendEmployeeBanned(UUID userId) {
+    public void sendEmployeeBanned(UUID userId) throws JsonProcessingException {
         final String topic = getTopicName(BAN_ACTION_TOPIC_PART, EMPLOYEE_TOPIC_PART);
         UserUUIDMessage message = new UserUUIDMessage(userId.toString());
-        kafkaTemplate.send(topic, message);
+        kafkaTemplate.send(topic, objectMapper.writeValueAsString(message));
     }
 
-    public void sendClientUnbanned(UUID userId) {
+    public void sendClientUnbanned(UUID userId) throws JsonProcessingException {
         final String topic = getTopicName(UNBAN_ACTION_TOPIC_PART, CLIENT_TOPIC_PART);
         UserUUIDMessage message = new UserUUIDMessage(userId.toString());
-        kafkaTemplate.send(topic, message);
+        kafkaTemplate.send(topic, objectMapper.writeValueAsString(message));
     }
 
-    public void sendEmployeeUnbanned(UUID userId) {
+    public void sendEmployeeUnbanned(UUID userId) throws JsonProcessingException {
         final String topic = getTopicName(UNBAN_ACTION_TOPIC_PART, EMPLOYEE_TOPIC_PART);
         UserUUIDMessage message = new UserUUIDMessage(userId.toString());
-        kafkaTemplate.send(topic, message);
+        kafkaTemplate.send(topic, objectMapper.writeValueAsString(message));
     }
 
     private String getTopicName(String action, String role) {
@@ -57,8 +60,8 @@ public class KafkaProfileService {
         return MessageFormat.format("{0}.{1}.{2}", SERVICE_NAME_TOPIC_PART, action, role);
     }
 
-    private void sendMessageWithCorrelationId(String topic, String correlationId, Object messageContent) {
-        ProducerRecord<String, Object> record = new ProducerRecord<>(topic, messageContent);
+    private void sendMessageWithCorrelationId(String topic, String correlationId, Object messageContent) throws JsonProcessingException {
+        ProducerRecord<String, String> record = new ProducerRecord<>(topic, objectMapper.writeValueAsString(messageContent));
         record.headers().add("correlation_id", correlationId.getBytes());
         kafkaTemplate.send(record);
     }
