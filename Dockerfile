@@ -6,6 +6,7 @@ WORKDIR /app
 
 COPY ${JAR_FILE} /app/app.jar
 
-EXPOSE 9090
+ARG APP_PORT
+EXPOSE ${APP_PORT}
 
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

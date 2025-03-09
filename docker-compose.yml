@@ -171,6 +171,7 @@ services:
         dockerfile: ./Dockerfile
         args:
           JAR_FILE: "bank-gateway-service/build/libs/bank-gateway-service-1.0-SNAPSHOT.jar"
+          APP_PORT: 9446
       ports:
         - "9446:9446"
       networks:
