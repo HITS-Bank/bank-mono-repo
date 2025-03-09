@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/employee/profile")
+@RequestMapping("/users/employee/profile")
 @RequiredArgsConstructor
 public class ProfileController {
 
