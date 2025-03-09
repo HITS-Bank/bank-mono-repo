@@ -219,7 +219,15 @@ public class AccountService {
         final Pageable pageable = PageRequest.of(pageNumber, pageSize);
 
         final Client client = clientRepository.findByClientId(clientId)
-                .orElseThrow(() -> new EntityNotFoundException("Client not found"));
+                .orElse(null);
+
+        if (client == null) {
+            clientRepository.save(new Client(clientId));
+            return new AccountsPaginationResponse(
+                    new PageInfo(pageSize, pageNumber + 1),
+                    List.of()
+            );
+        }
         final Page<Account> accounts = accountRepository.findByClient(client, pageable);
 
         return new AccountsPaginationResponse(
