@@ -53,6 +53,7 @@ public class EmployeeVerificationServiceImpl implements EmployeeVerificationServ
             try {
                 ObjectMapper objectMapper = new ObjectMapper();
                 VerificationAnswerDTO responseDTO = objectMapper.readValue(pair.getResponse(), VerificationAnswerDTO.class);
+                log.info("responseDTO {}", responseDTO);
                 if (!responseDTO.isBlocked()) {
                     return true;
                 }
@@ -90,17 +91,12 @@ public class EmployeeVerificationServiceImpl implements EmployeeVerificationServ
         Object messageValue = record.value();
         String response;
 
-        if (messageValue instanceof String) {
-            response = (String) messageValue;
-        } else {
             try {
-                VerificationResponseDTO responseDTO = objectMapper.convertValue(messageValue, VerificationResponseDTO.class);
-                response = responseDTO.getResponse();
+                response = objectMapper.convertValue(messageValue, String.class);
             } catch (Exception e) {
                 log.error("Ошибка при десериализации JSON: ", e);
                 return;
             }
-        }
 
         SemaphoreResponsePair pair = semaphoreMap.get(correlationId);
         if (pair != null) {

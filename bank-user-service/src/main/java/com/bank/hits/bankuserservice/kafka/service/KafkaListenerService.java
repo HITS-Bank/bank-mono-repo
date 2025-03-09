@@ -36,22 +36,14 @@ public class KafkaListenerService {
         log.info("Получено сообщение с corId {}", correlationId);
         Object messageValue = record.value();
         String response;
-
-        if (messageValue instanceof String) {
-            log.info("строка");
-            response = (String) messageValue;
-            log.info("response= {}", response);
-        } else {
-            log.info("объект");
             try {
-                CreditUserInfoRequestPayload responseDTO = objectMapper.convertValue(messageValue, CreditUserInfoRequestPayload.class);
-                response = responseDTO.userId();
+                response = objectMapper.convertValue(messageValue, String.class);
+                //response = responseDTO.userId();
                 log.info("response= {}", response);
             } catch (Exception e) {
                 log.error("Ошибка при десериализации JSON: ", e);
                 return;
             }
-        }
 
 
         UserDto profile = profileService.getSelfProfile(UUID.fromString(response));
