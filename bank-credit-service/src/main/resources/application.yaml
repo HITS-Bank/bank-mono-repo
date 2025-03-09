@@ -1,5 +1,5 @@
 server:
-  port: ${APPLICATION_PORT:8989}
+  port: ${APP_PORT:9445}
   tomcat:
     connection-timeout: 120000
 

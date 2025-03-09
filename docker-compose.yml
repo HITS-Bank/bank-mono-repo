@@ -128,6 +128,7 @@ services:
         dockerfile: ./Dockerfile
         args:
           JAR_FILE: "bank-core-service/build/libs/bank-core-service-1.0.0.jar"
+          APP_PORT: 9444
       depends_on:
         - postgresql-core
         - kafka
@@ -140,6 +141,7 @@ services:
         SPRING_DATASOURCE_USERNAME: postgres
         SPRING_DATASOURCE_PASSWORD: 12345
         SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+        APP_PORT: 9444
 
     credit-app:
       container_name: credit-app
@@ -148,6 +150,8 @@ services:
         dockerfile: ./Dockerfile
         args:
           JAR_FILE: "bank-credit-service/build/libs/bank-credit-service-1.0.0-SNAPSHOT.jar"
+          APP_PORT: 9445
+
       depends_on:
         - postgresql-credit
         - kafka
@@ -163,6 +167,8 @@ services:
         SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
         REDIS_HOST: redis
         REDIS_PORT: 6379
+        APP_PORT: 9445
+
 
     gateway-app:
       container_name: gateway-app
@@ -178,6 +184,7 @@ services:
         - network-local
       environment:
         SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+        APP_PORT: 9446
 
     user-app:
       container_name: user-app
@@ -186,6 +193,7 @@ services:
         dockerfile: ./Dockerfile
         args:
           JAR_FILE: "bank-user-service/build/libs/bank-user-service-0.0.1-SNAPSHOT.jar"
+          APP_PORT: 9447
       depends_on:
         - postgresql-user
         - kafka
@@ -198,6 +206,7 @@ services:
         SPRING_DATASOURCE_USERNAME: postgres
         SPRING_DATASOURCE_PASSWORD: 12345
         SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+        APP_PORT: 9447
 
 volumes:
     postgres-core:
