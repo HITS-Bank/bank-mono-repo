@@ -126,6 +126,7 @@ public class AccountEventConsumer {
             final UUID clientId = UUID.fromString(record.value());
 
             final ClientInfoDto clientInfo = clientService.getClientInfoForCredit(clientId);
+            log.info("clientInfo = {}", clientInfo);
             kafkaProducerService.sendUserInfoForCredit(clientInfo,correlationId);
             log.info("Client info sent for client {}", clientId);
         } catch (Exception e) {

@@ -3,12 +3,7 @@ package com.bank.hits.bankcreditservice.service.impl;
 import com.bank.hits.bankcreditservice.exception.CreditCreationException;
 import com.bank.hits.bankcreditservice.model.CreditHistory;
 import com.bank.hits.bankcreditservice.model.CreditTariff;
-import com.bank.hits.bankcreditservice.model.DTO.CreditApplicationRequestDTO;
-import com.bank.hits.bankcreditservice.model.DTO.CreditApplicationResponseDTO;
-import com.bank.hits.bankcreditservice.model.DTO.CreditApprovedDTO;
-import com.bank.hits.bankcreditservice.model.DTO.CreditClientInfoResponseDTO;
-import com.bank.hits.bankcreditservice.model.DTO.PageInfoDTO;
-import com.bank.hits.bankcreditservice.model.DTO.UserLoansResponseDTO;
+import com.bank.hits.bankcreditservice.model.DTO.*;
 import com.bank.hits.bankcreditservice.repository.CreditHistoryRepository;
 import com.bank.hits.bankcreditservice.repository.CreditTariffRepository;
 import com.bank.hits.bankcreditservice.service.api.CreditApplicationService;
@@ -70,18 +65,22 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         }
         CreditTariff tariff = tariffOpt.get();
 
+        log.info("Отправка запроса на получение информации о клиенте");
         String correlationId = sendClientInfoRequest(clientUuid);
         Semaphore semaphore = semaphoreMap.get(correlationId).getSemaphore();
         boolean acquired = semaphore.tryAcquire(30, TimeUnit.SECONDS);
         if (!acquired) {
             throw new RuntimeException("Timeout waiting for client info response");
         }
+        log.info("Получен ответ");
         SemaphoreResponsePair pair = semaphoreMap.remove(correlationId);
         if (pair == null || pair.getResponse() == null) {
             throw new RuntimeException("No valid response received for client info");
         }
         CreditClientInfoResponseDTO clientInfo = objectMapper.readValue(pair.getResponse(), CreditClientInfoResponseDTO.class);
-        boolean approved = evaluateCreditApplication(request, clientInfo);
+        log.info("clientInfo = {}", clientInfo);
+        boolean approved = approveCredit(request, clientInfo);
+        log.info("approved - {}", approved);
         if(!approved)
         {
             throw new CreditCreationException("Вам отказано в кредите");
@@ -236,14 +235,51 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         return amount.multiply(monthlyRate).multiply(onePlusRatePowerN)
                 .divide(onePlusRatePowerN.subtract(BigDecimal.ONE), 2, RoundingMode.HALF_UP);
     }
-    private boolean evaluateCreditApplication(CreditApplicationRequestDTO request, CreditClientInfoResponseDTO clientInfo) {
-        boolean hasActiveAccount = clientInfo.getAccounts().stream()
-                .anyMatch(account -> !account.isBlocked() && !account.isClosed());
-        boolean creditWithinLimit = clientInfo.getCreditHistory().getTotalCreditAmount().compareTo(request.getAmount()) < 0;
-        return hasActiveAccount && creditWithinLimit;
+
+    public boolean approveCredit(CreditApplicationRequestDTO request, CreditClientInfoResponseDTO clientInfo) {
+        if (hasOverdueCredits(clientInfo.getCredits())) {
+            return false;
+        }
+        if (!isAccountValid(request.getBankAccountNumber(), clientInfo.getAccounts())) {
+            return false;
+        }
+        if (isCreditLoadTooHigh(clientInfo.getCredits(), request.getAmount())) {
+            return false;
+        }
+        return true;
+    }
+
+    private boolean hasOverdueCredits(List<CreditContractDto> credits) {
+        LocalDateTime now = LocalDateTime.now();
+        for (CreditContractDto credit : credits) {
+            if (credit.getEndDate().isBefore(now) && credit.getCreditRepaymentAmount().compareTo(BigDecimal.ZERO) > 0) {
+                return true; // Есть просроченные кредиты
+            }
+        }
+        return false;
+    }
+
+    private boolean isAccountValid(String accountNumber, List<AccountInfoDTO> accounts) {
+        for (AccountInfoDTO account : accounts) {
+            if (account.getAccountNumber().equals(accountNumber)) {
+                return !account.isBlocked() && !account.isClosed() && new BigDecimal(account.getBalance()).compareTo(BigDecimal.ZERO) > 0;
+            }
+        }
+        return false;
+    }
+
+    private boolean isCreditLoadTooHigh(List<CreditContractDto> credits, BigDecimal requestedAmount) {
+        BigDecimal totalDebt = BigDecimal.ZERO;
+        for (CreditContractDto credit : credits) {
+            totalDebt = totalDebt.add(credit.getCreditAmount());
+        }
+
+        BigDecimal debtLimit = new BigDecimal("50000"); // Условный порог долговой нагрузки
+        return totalDebt.add(requestedAmount).compareTo(debtLimit) > 0;
     }
 
     private String sendClientInfoRequest(String clientUuid) throws JMSException {
+        log.info("Id клиента {}", clientUuid);
         String correlationId = UUID.randomUUID().toString();
         ProducerRecord<String, String> record = new ProducerRecord<>(creditClientInfoRequestTopic, clientUuid);
         record.headers().add("event_type", "get_credit_client_info".getBytes());
@@ -257,12 +293,14 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
 
     @KafkaListener(topics = "${kafka.topics.core-information.response}", groupId = "creditClientInfoGroup")
     public void receiveClientInfoResponse(ConsumerRecord<String, String> record) {
+        log.info("Получено сообщение clientInfo");
         Header header = record.headers().lastHeader("correlation_id");
         if (header == null) {
             log.warn("Получен ответ без заголовка correlation_id");
             return;
         }
         String correlationId = new String(header.value());
+        log.info("correlationId {}", correlationId);
         String response = record.value();
         SemaphoreResponsePair pair = semaphoreMap.get(correlationId);
         if (pair != null) {

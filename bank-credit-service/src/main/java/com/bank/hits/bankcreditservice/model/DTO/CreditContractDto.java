@@ -1,4 +1,4 @@
-package com.bank.hits.bankcoreservice.api.dto;
+package com.bank.hits.bankcreditservice.model.DTO;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -26,3 +26,4 @@ public class CreditContractDto {
     @JsonProperty("endDate")
     private LocalDateTime endDate;
 }
+
