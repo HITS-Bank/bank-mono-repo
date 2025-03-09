@@ -123,7 +123,8 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         creditHistory.setMonthlyPayment(monthlyPayment);
         creditHistory.setEndDate(LocalDateTime.now().plusMonths(request.getTermInMonths()));
         creditHistory.setRemainingDebt(totalPayment);
-        creditHistory.setLoanNumber(creditNumber);
+        creditHistory.setNumber(creditNumber);
+        creditHistory.setBankAccountNumber(request.getBankAccountNumber());
         creditHistoryRepository.save(creditHistory);
         sendCreditApprovedEvent(creditHistory);
         return responseDTO;
@@ -206,7 +207,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         loanDTO.setNumber(credit.getNumber());
         loanDTO.setAmount(credit.getTotalAmount());
         loanDTO.setTermInMonths((int) credit.getEndDate().minusMonths(credit.getStartDate().getMonthValue()).getMonthValue());
-        loanDTO.setBankAccountNumber(credit.getLoanNumber());
+        loanDTO.setBankAccountNumber(credit.getBankAccountNumber());
         loanDTO.setPaymentAmount(credit.getMonthlyPayment());
         loanDTO.setPaymentSum(credit.getMonthlyPayment().multiply(BigDecimal.valueOf(loanDTO.getTermInMonths())));
         loanDTO.setNextPaymentDateTime(credit.getStartDate().plusMonths(1));

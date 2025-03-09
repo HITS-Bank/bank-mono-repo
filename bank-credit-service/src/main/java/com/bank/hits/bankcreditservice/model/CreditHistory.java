@@ -23,8 +23,8 @@ public class CreditHistory {
     @Column(name = "tariff_id", nullable = false)
     private UUID tariffId;
 
-    @Column(name = "loanNumber", nullable = false)
-    private String loanNumber;
+    @Column(name = "bankAccountNumber", nullable = false)
+    private String bankAccountNumber;
 
     @Column(name = "number", nullable = false)
     private String number;
