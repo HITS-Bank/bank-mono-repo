@@ -36,10 +36,6 @@ public class ClientService {
                 .orElseThrow(() -> new RuntimeException("Client not found"));
         clientInfoDto.setClientId(client.getId());
 
-        if (employeeService.isEmployeeBlocked(employeeId)) {
-            throw new RuntimeException("Employee is blocked");
-        }
-
         final List<AccountDto> accountDtos = accountService.getAccountsByClientId(clientId);
         clientInfoDto.setAccounts(accountDtos);
 
