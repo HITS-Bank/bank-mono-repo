@@ -28,7 +28,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 @Slf4j
 @Service
@@ -108,13 +107,18 @@ public class AccountService {
     }
 
     public void blockAccount(final UUID clientId) {
-        final List<Account> accounts = accountRepository.findByClientId(clientId);
+        final Client client = clientRepository.findByClientId(clientId)
+                .orElseThrow(() -> new EntityNotFoundException("Client not found"));
+
+        final List<Account> accounts = accountRepository.findByClient(client);
         accounts.forEach(account -> account.setBlocked(true));
         accountRepository.saveAll(accounts);
     }
 
     public void unblockAccount(final UUID clientId) {
-        final List<Account> accounts = accountRepository.findByClientId(clientId);
+        final Client client = clientRepository.findByClientId(clientId)
+                .orElseThrow(() -> new EntityNotFoundException("Client not found"));
+        final List<Account> accounts = accountRepository.findByClient(client);
         accounts.forEach(account -> account.setBlocked(false));
         accountRepository.saveAll(accounts);
     }
@@ -129,13 +133,17 @@ public class AccountService {
     }
 
     public List<AccountDto> getAccountsByClientId(final UUID clientId) {
-        return accountRepository.findByClientId(clientId).stream()
+        final Client client = clientRepository.findByClientId(clientId)
+                .orElseThrow(() -> new EntityNotFoundException("Client not found"));
+        return accountRepository.findByClient(client).stream()
                 .map(accountMapper::map)
                 .toList();
     }
 
     public List<AccountTransactionDto> getAccountTransactionsByClientId(final UUID clientId) {
-        return accountRepository.findByClientId(clientId).stream()
+        final Client client = clientRepository.findByClientId(clientId)
+                .orElseThrow(() -> new EntityNotFoundException("Client not found"));
+        return accountRepository.findByClient(client).stream()
                 .flatMap(account -> accountTransactionRepository.findByAccountId(account.getId()).stream())
                 .map(accountTransactionMapper::map)
                 .toList();
@@ -214,7 +222,9 @@ public class AccountService {
     public AccountsPaginationResponse getAllClientAccounts(final UUID clientId, int pageSize, int pageNumber) {
         final Pageable pageable = PageRequest.of(pageNumber, pageSize);
 
-        final Page<Account> accounts = accountRepository.findByClientId(clientId, pageable);
+        final Client client = clientRepository.findByClientId(clientId)
+                .orElseThrow(() -> new EntityNotFoundException("Client not found"));
+        final Page<Account> accounts = accountRepository.findByClient(client, pageable);
 
         return new AccountsPaginationResponse(
                 new PageInfo(pageSize, pageNumber + 1),
