@@ -33,3 +33,11 @@ spring:
 logging:
   liquibase:
     change-log: classpath:db/changelog/changelog.xml
+
+springdoc:
+  api-docs:
+    path: /api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
