@@ -5,7 +5,9 @@ import com.bank.hits.bankcoreservice.api.constant.ApiConstants;
 import com.bank.hits.bankcoreservice.api.dto.AccountNumberRequest;
 import com.bank.hits.bankcoreservice.api.dto.AccountsPaginationResponse;
 import com.bank.hits.bankcoreservice.api.dto.CloseAccountRequest;
+import com.bank.hits.bankcoreservice.api.dto.ExternalTransferRequest;
 import com.bank.hits.bankcoreservice.api.dto.TopUpRequest;
+import com.bank.hits.bankcoreservice.api.dto.InternalTransferRequest;
 import com.bank.hits.bankcoreservice.api.dto.WithdrawRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -75,6 +77,18 @@ public class AccountController {
     public ResponseEntity<List<AccountTransactionDto>> getAccountHistory(@RequestBody final AccountNumberRequest request, @RequestParam final int pageSize,
                                                                          @RequestParam final int pageNumber) {
         return ResponseEntity.ok(accountService.getAccountHistory(request, pageSize, pageNumber - 1));
+    }
+
+    @PostMapping(value = ApiConstants.TRANSFER_INTERNAL, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AccountDto> transferBetweenOwnAccounts(final @RequestHeader("userId") UUID clientId,
+                                                                 final @RequestBody InternalTransferRequest request) {
+        return ResponseEntity.ok(accountService.transferBetweenOwnAccounts(request));
+    }
+
+    @PostMapping(value = ApiConstants.TRANSFER_EXTERNAL, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AccountDto> transferToAnotherClient(final @RequestHeader("userId") UUID clientId,
+                                                              final @RequestBody ExternalTransferRequest request) {
+        return ResponseEntity.ok(accountService.transferToAnotherClient(request));
     }
 
 }

@@ -127,6 +127,7 @@ public class AccountEventConsumer {
             if (correlationId == null) { return;}
 
             final UUID clientId = UUID.fromString(record.value());
+            log.info("Client info request for client {}", clientId);
 
             final ClientInfoDto clientInfo = clientService.getClientInfoForCredit(clientId);
             log.info("clientInfo = {}", clientInfo);
@@ -155,10 +156,15 @@ public class AccountEventConsumer {
 
     private UUID parseCorrelationId(final ConsumerRecord<String, ?> record) {
         final Header header = record.headers().lastHeader("correlation_id");
+        log.info("header: {}", header);
+        log.info("headers: {}", record.headers());
+        log.info("correlationId: {}", header.value());
+        log.info("record.value: {}", record.value());
         if (header == null) {
             log.warn("Получено сообщение без заголовка correlation_id");
             return null;
         }
+        log.info("correlation_id: {}", new String(header.value()));
         final UUID correlationId = UUID.fromString(new String(header.value()));
 
         return correlationId;

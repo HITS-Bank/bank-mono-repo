@@ -31,7 +31,7 @@ public class Account {
     private UUID id;
 
     @NaturalId
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String accountNumber;
     @ManyToOne
     @JoinColumn(name = "client_id", nullable = false)
