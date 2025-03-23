@@ -1,0 +1,1189 @@
+openapi: 3.0.3
+info:
+  title: Swagger (свэг) - OpenAPI 3.0
+  description: |-
+  version: '1.0'
+tags:
+  - name: Auth
+    description: Работа с аутентификацией/авторизацией (Deprecated, тут будет SSO)
+  - name: Profile
+    description: Работа с профилями пользователей
+  - name: Bank Account
+    description: Работа со счетами
+  - name: Loan
+    description: Работа с кредитами
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      parameters:
+        - name: channel
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Channel'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginCredentials'
+      responses:
+        '200':
+          description: Авторизация успешно завершена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal server error
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Токены обновлены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Refresh token is invalid or expired
+        '500':
+          description: Internal server error
+  /employee/auth/register:
+    post:
+      tags:
+        - Auth
+      description: Запрос доступен только сотрудникам (если сотрудник не заблокирован)
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '204':
+          description: Пользователь (клиент/сотрудник) создан
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized; возвращается, когда вызывающий не авторизован
+        '403':
+          description: Forbidden; возвращается, когда вызывающий - клиент или заблокированный сотрудник
+        '500':
+          description: Internal server error
+  /profile:
+    get:
+      tags:
+        - Profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Профиль получен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+  /employee/profile/{userId}/ban:
+    post:
+      tags:
+        - Profile
+      description: Запрос доступен только сотрудникам (если сотрудник не заблокирован)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Пользователь забанен
+        '400':
+          description: Bad Request; возвращается, когда вызывающий - НЕзаблокированный сотрудник, а пользователь с указанным id не существует
+        '401':
+          description: Unauthorized; возвращается, когда вызывающий не авторизован
+        '403':
+          description: Forbidden; возвращается, когда вызывающий - клиент или заблокированный сотрудник
+        '500':
+          description: Internal server error
+  /employee/profile/{userId}/unban:
+    post:
+      tags:
+        - Profile
+      description: Запрос доступен только сотрудникам (если сотрудник не заблокирован)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Пользователь разблокирован
+        '400':
+          description: Bad Request; возвращается, когда вызывающий - НЕзаблокированный сотрудник, а пользователь с указанным id не существует
+        '401':
+          description: Unauthorized; возвращается, когда вызывающий не авторизован
+        '403':
+          description: Forbidden; возвращается, когда вызывающий - клиент или заблокированный сотрудник
+        '500':
+          description: Internal server error
+  /employee/profile/list:
+    get:
+      tags:
+        - Profile
+      description: Запрос доступен только сотрудникам (если сотрудник не заблокирован)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: role
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Channel'
+        - name: nameQuery
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: pageSize
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: pageNumber
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список получен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Profile'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized; возвращается, когда либо вызывающий не авторизован
+        '403':
+          description: Forbidden; возвращается, когда вызывающий - заблокированный сотрудник
+        '500':
+          description: Internal server error
+  /bank_account/create:
+    post:
+      tags:
+        - Bank Account
+      description: Запрос доступен только клиентам (если клиент не заблокирован)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: currencyCode
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/CurrencyCode'
+      responses:
+        '200':
+          description: Счет создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankAccount'
+        '401':
+          description: Unauthorized; возвращается, когда вызывающий не авторизован
+        '403':
+          description: Forbidden; возвращается, когда вызывающий - заблокированный клиент
+        '500':
+          description: Internal server error
+  /bank_account/list:
+    get:
+      tags:
+        - Bank Account
+      description: Запрос доступен только клиентам
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: pageSize
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: pageNumber
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список счетов получен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BankAccount'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized; возвращается, когда вызывающий не авторизован
+        '403':
+          description: Forbidden; возвращается, когда вызывающий - сотрудник
+        '500':
+          description: Internal server error
+  /employee/bank_account/{userId}/list:
+    get:
+      tags:
+        - Bank Account
+      description: Запрос доступен только сотрудникам (если сотрудник не заблокирован)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: pageSize
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: pageNumber
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список счетов получен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BankAccount'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized; возвращается, когда вызывающий не авторизован
+        '403':
+          description: Forbidden; возвращается, когда вызывающий - клиент или заблокированный сотрудник
+        '500':
+          description: Internal server error
+  /bank_account/{accountId}:
+    get:
+      tags:
+        - Bank Account
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Счет получен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankAccount'
+        '401':
+          description: Unauthorized; возвращается, когда либо счет не существует, либо вызывающий не авторизован, либо вызывающий - клиент, не имеющий доступ к данному счету
+        '403':
+          description: Forbidden; возвращается, когда вызывающий - заблокированный сотрудник
+        '500':
+          description: Internal server error
+  /bank_account/{accountId}/close:
+    post:
+      tags:
+        - Bank Account
+      description: Запрос доступен только клиентам (если клиент не заблокирован)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Счет закрыт
+        '400':
+          description: Bad Request - баланс счета != 0
+        '401':
+          description: Unauthorized; возвращается, когда либо счет не существует, либо вызывающий не авторизован, либо вызывающий - клиент, не имеющий доступ к данному счету
+        '403':
+          description: Forbidden; возвращается, когда вызывающий - сотрудник или заблокированный клиент
+        '500':
+          description: Internal server error
+  /bank_account/{accountId}/top_up:
+    post:
+      tags:
+        - Bank Account
+      description: Запрос доступен только клиентам (если клиент не заблокирован)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeBankAccountBalanceRequest'
+      responses:
+        '204':
+          description: Счет пополнен
+        '400':
+          description: Bad Request - некорректная сумма денег
+        '401':
+          description: Unauthorized; возвращается, когда либо счет не существует, либо вызывающий не авторизован, либо вызывающий - клиент, не имеющий доступ к данному счету
+        '403':
+          description: Forbidden; возвращается, когда вызывающий - сотрудник или заблокированный клиент
+        '500':
+          description: Internal server error
+  /bank_account/{accountId}/withdraw:
+    post:
+      tags:
+        - Bank Account
+      description: Запрос доступен только клиентам (если клиент не заблокирован)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeBankAccountBalanceRequest'
+      responses:
+        '204':
+          description: Средства сняты со счёта
+        '400':
+          description: Bad Request - некорректная сумма денег
+        '401':
+          description: Unauthorized; возвращается, когда либо счет не существует, либо вызывающий не авторизован, либо вызывающий - клиент, не имеющий доступ к данному счету
+        '403':
+          description: Forbidden; возвращается, когда вызывающий - сотрудник или заблокированный клиент
+        '500':
+          description: Internal server error
+  /bank_account/transferInfo:
+    post:
+      tags:
+        - Bank Account
+      description: Запрос доступен только клиентам (если клиент не заблокирован)
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+      responses:
+        '200':
+          description: Детали перевода получены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferInfo'
+        '400':
+          description: Bad Request - некорректная сумма денег
+        '401':
+          description: Unauthorized; возвращается, когда либо вызывающий не авторизован, либо вызывающий - клиент, не имеющий доступ к счету отправителя
+        '403':
+          description: Forbidden; возвращается, когда вызвающий - сотрудник или заблокированный клиент
+        '404':
+          description: Not found; возвращается, когда не существует счёта отправителя или получателя
+        '500':
+          description: Internal server error
+  /bank_account/transfer:
+    post:
+      tags:
+        - Bank Account
+      description: Запрос доступен только клиентам (если клиент не заблокирован)
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+      responses:
+        '204':
+          description: Средства переведены
+        '400':
+          description: Bad Request - некорректная сумма денег
+        '401':
+          description: Unauthorized; возвращается, когда либо вызывающий не авторизован, либо вызывающий - клиент, не имеющий доступ к счету отправителя
+        '403':
+          description: Forbidden; возвращается, когда вызывающий - сотрудник или заблокированный клиент
+        '404':
+          description: Not found; возвращается, когда не существует счёта отправителя или получателя
+        '500':
+          description: Internal server error
+  /bank_account/{accountId}/operation_history:
+    post:
+      tags:
+        - Bank Account
+      summary: TODO уточнить, можно ли пагинацию запихать в вебсокеты (либо пагинация будет отдельным запросом, а получение новых операций будет происходить через вебсокет)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: pageSize
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: pageNumber
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: История операций счёта получена
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Operation'
+        '401':
+          description: Unauthorized; возвращается, когда либо счет не существует, либо вызывающий не авторизован, либо вызывающий - клиент, не имеющий доступ к данному счету
+        '403':
+          description: Forbidden; возвращается, когда вызывающий - заблокированный сотрудник
+        '500':
+          description: Internal server error
+  /loan/{userId}/rating:
+    get:
+      tags:
+        - Loan
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Кредитный рейтинг успешно получен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rating:
+                    type: number
+        '401':
+          description: Unauthorized; возвращается, когда либо вызывающий не авторизован
+        '403':
+          description: Forbidden; возвращается, когда вызывающий - заблокированный сотрудник
+        '500':
+          description: Internal server error
+  /loan/create:
+    post:
+      tags:
+        - Loan
+      description: Запрос доступен только клиентам (если клиент не заблокирован)
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanCreationRequest'
+      responses:
+        '200':
+          description: Кредит оформлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Loan'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized; возвращается, когда либо вызывающий не авторизован, либо счёт кредита на существует, либо вызывающий - клиент, не имеющий доступ к данному счету
+        '403':
+          description: Forbidden; возвращается, когда либо вызывающий - сотрудник или заблокированный клиент, либо кредит не был одобрен
+        '500':
+          description: Internal server error
+  /loan/{loanId}/pay:
+    post:
+      tags:
+        - Loan
+      description: Запрос доступен только клиентам (если клиент не заблокирован)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: loanId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Выплата по кредиту прошла успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Loan'
+        '401':
+          description: Unauthorized; возвращается, когда либо вызывающий не авторизован, либо кредит с таким номером не существует, либо клиент не имеет доступа к кредиту с указанным номером
+        '403':
+          description: Forbidden; возвращается, когда либо вызывающий - сотрудник или заблокированный клиент
+        '500':
+          description: Internal server error
+  /loan/tariffs:
+    get:
+      tags:
+        - Loan
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: nameQuery
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: sortingProperty
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/LoanTariffSortingProperty'
+        - name: sortingOrder
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/SortingOrder'
+        - name: pageSize
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: pageNumber
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список тарифов получен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LoanTariff'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized; возвращается, когда либо вызывающий не авторизован
+        '403':
+          description: Forbidden; возвращается, когда вызывающий - заблокированный сотрудник
+        '500':
+          description: Internal server error
+  /employee/loan/tariffs/create:
+    post:
+      tags:
+        - Loan
+      description: Запрос доступен только сотрудникам (если сотрудник не заблокирован)
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanTariffCreationRequest'
+      responses:
+        '200':
+          description: Тариф успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanTariff'
+        '401':
+          description: Unauthorized; возвращается, когда либо вызывающий не авторизован
+        '403':
+          description: Forbidden; возвращается, когда либо вызывающий - заблокированный сотрудник или клиент
+        '500':
+          description: Internal server error
+  /employee/loan/tariffs/{tariffId}/delete:
+    delete:
+      tags:
+        - Loan
+      description: Запрос доступен только сотрудникам (если сотрудник не заблокирован)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tariffId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Тариф успешно удалён
+        '400':
+          description: Bad Request; возвращается, когда тариф с указанным id не существует
+        '401':
+          description: Unauthorized; возвращается, когда либо вызывающий не авторизован
+        '403':
+          description: Forbidden; возвращается, когда либо вызывающий - заблокированный сотрудник или клиент
+        '500':
+          description: Internal server error
+  /loan/{loanId}:
+    get:
+      tags:
+        - Loan
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: loanId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Кредит успешно получен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Loan'
+        '401':
+          description: Unauthorized; возвращается, когда либо вызывающий не авторизован
+        '403':
+          description: Forbidden; возвращается, когда вызывающий - заблокированный сотрудник
+        '500':
+          description: Internal server error
+  /loan/{loanId}/payments:
+    get:
+      tags:
+        - Loan
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: loanId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Список платежей успешно получен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LoanPayment'
+        '401':
+          description: Unauthorized; возвращается, когда либо вызывающий не авторизован
+        '403':
+          description: Forbidden; возвращается, когда вызывающий - заблокированный сотрудник
+        '500':
+          description: Internal server error
+  /loan/list:
+    get:
+      tags:
+        - Loan
+      description: Запрос доступен только клиентам
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: pageSize
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: pageNumber
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список кредитов успешно получен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Loan'
+        '401':
+          description: Unauthorized; возвращается, когда либо вызывающий не авторизован
+        '403':
+          description: Forbidden; возвращается, когда вызывающий - сотрудник
+        '500':
+          description: Internal server error
+  /employee/loan/{userId}/list:
+    get:
+      tags:
+        - Loan
+      description: Запрос доступен только сотрудникам
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: pageSize
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: pageNumber
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список кредитов успешно получен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Loan'
+        '400':
+          description: Bad Request; возвращается, когда вызывающий - сотрудник, и клиента с указанным userId не существует
+        '401':
+          description: Unauthorized; возвращается, когда вызывающий не авторизован
+        '403':
+          description: Forbidden; возвращается, когда вызывающий - клиент или заблокированный сотрудник
+        '500':
+          description: Internal server error
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    TransferAccountInfo:
+      type: object
+      required:
+        - accountId
+        - accountNumber
+        - accountCurrencyCode
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        accountNumber:
+          type: string
+          minLength: 20
+          maxLength: 20
+          example: '40802810500001846336'
+        accountCurrencyCode:
+          $ref: '#/components/schemas/CurrencyCode'
+    TransferInfo:
+      type: object
+      required:
+        - senderAccountInfo
+        - receiverAccountInfo
+        - transferAmountBeforeConversion
+        - transferAmountAfterConversion
+      properties:
+        senderAccountInfo:
+          $ref: '#/components/schemas/TransferAccountInfo'
+        receiverAccountInfo:
+          $ref: '#/components/schemas/TransferAccountInfo'
+        transferAmountBeforeConversion:
+          type: string
+          example: '300000000'
+        transferAmountAfterConversion:
+          type: string
+          example: '300000000'
+    TransferRequest:
+      type: object
+      required:
+        - senderAccountId
+        - receiverAccountId
+        - transferAmount
+      properties:
+        senderAccountId:
+          type: string
+          format: uuid
+        receiverAccountId:
+          type: string
+          format: uuid
+        transferAmount:
+          type: string
+          example: '300000000'
+    CurrencyCode:
+      type: string
+      enum:
+        - RUB
+        - KZT
+        - CNY
+    RefreshRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+    LoanPaymentStatus:
+      type: string
+      enum:
+        - PLANNED
+        - OVERDUE
+        - EXECUTED
+    LoanPayment:
+      type: object
+      required:
+        - id
+        - status
+        - dateTime
+        - amount
+        - currencyCode
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/LoanPaymentStatus'
+        dateTime:
+          description: Время, смысл которого зависит от статуса платежа. Если платёж запланирован - это время, когда платёж должен выполниться (в будущем). Если платёж уже прошёл - это время, когда платёж был выполнен. Если платёж просрочен - это время, когда платёж должен был быть выполнен (но не выполнился).
+          type: string
+          format: date-time
+        amount:
+          type: string
+          example: '300000000'
+        currencyCode:
+          $ref: '#/components/schemas/CurrencyCode'
+    Loan:
+      type: object
+      required:
+        - id
+        - number
+        - tariff
+        - amount
+        - termInMonths
+        - bankAccountId
+        - bankAccountNumber
+        - paymentAmount
+        - paymentSum
+        - nextPaymentDateTime
+        - currentDebt
+        - currencyCode
+      properties:
+        id:
+          type: string
+          format: uuid
+        number:
+          type: string
+          minLength: 20
+          maxLength: 20
+          example: '40802810500001846336'
+        tariff:
+          $ref: '#/components/schemas/LoanTariff'
+        amount:
+          description: Сумма кредита
+          type: string
+          example: "300000"
+        termInMonths:
+          description: Срок кредита в месяцах
+          type: integer
+          example: 12
+        bankAccountId:
+          description: Id счета, куда зачисляются и откуда списываются средства
+          type: string
+          format: uuid
+        bankAccountNumber:
+          description: Номер счета, куда зачисляются и откуда списываются средства
+          type: string
+          minLength: 20
+          maxLength: 20
+          example: '40802810500001846336'
+        paymentAmount:
+          description: Сумма следующей выплаты
+          type: string
+          example: "10000"
+        paymentSum:
+          description: Сумма всех выплат
+          type: string
+          example: "400000"
+        currencyCode:
+          $ref: '#/components/schemas/CurrencyCode'
+        nextPaymentDateTime:
+          description: Время следующей выплаты
+          type: string
+          format: date-time
+        currentDebt:
+          description: Текущий долг (сколько осталось выплатить)
+          type: string
+          example: "350000"
+    LoanCreationRequest:
+      type: object
+      required:
+        - tariffId
+        - amount
+        - termInMonths
+        - bankAccountId
+      properties:
+        tariffId:
+          type: string
+          format: uuid
+        amount:
+          type: string
+          example: "300000"
+        termInMonths:
+          type: integer
+          example: 12
+        bankAccountId:
+          type: string
+          format: uuid
+    LoanTariff:
+      type: object
+      required:
+        - id
+        - name
+        - interestRate
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Скам"
+        interestRate:
+          type: string
+          example: "25.5"
+        createdAt:
+          type: string
+          format: date-time
+    LoanTariffSortingProperty:
+      type: string
+      enum:
+        - NAME
+        - CREATED_AT
+        - INTEREST_RATE
+    SortingOrder:
+      type: string
+      enum:
+        - ASCENDING
+        - DESCENDING
+    LoanTariffCreationRequest:
+      type: object
+      required:
+        - name
+        - interestRate
+      properties:
+        name:
+          type: string
+          example: "Скам"
+        interestRate:
+          type: string
+          example: "25.5"
+    OperationType:
+      type: string
+      enum:
+        - WITHDRAWAL
+        - TOP_UP
+        - LOAN_PAYMENT
+    Operation:
+      type: object
+      required:
+        - id
+        - executedAt
+        - type
+        - amount
+        - currencyCode
+      properties:
+        id:
+          type: string
+          format: uuid
+        executedAt:
+          type: string
+          format: date-time
+        type:
+          $ref: '#/components/schemas/OperationType'
+        amount:
+          type: string
+          example: '300000000'
+        currencyCode:
+          $ref: '#/components/schemas/CurrencyCode'
+    Profile:
+      type: object
+      required:
+        - id
+        - firstName
+        - lastName
+        - roles
+        - isBlocked
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+          example: "Иван"
+        lastName:
+          type: string
+          example: "Иванов"
+        isBlocked:
+          type: boolean
+          example: false
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Channel'
+    ChangeBankAccountBalanceRequest:
+      type: object
+      required:
+        - currencyCode
+        - amount
+      properties:
+        currencyCode:
+          $ref: '#/components/schemas/CurrencyCode'
+        amount:
+          type: string
+          example: '300000000'
+    BankAccount:
+      type: object
+      required:
+        - accountId
+        - accountNumber
+        - balance
+        - blocked
+        - closed
+        - currencyCode
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        accountNumber:
+          type: string
+          minLength: 20
+          maxLength: 20
+          example: '40802810500001846336'
+        balance:
+          type: string
+          example: '300000000'
+        currencyCode:
+          $ref: '#/components/schemas/CurrencyCode'
+        blocked:
+          type: boolean
+        closed:
+          type: boolean
+    RegisterRequest:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - email
+        - password
+        - role
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
+          example: 'a@a.a'
+          minLength: 5
+        password:
+          type: string
+          example: 'p.ssw0rd'
+          minLength: 6
+          maxLength: 30
+        role:
+          $ref: '#/components/schemas/Channel'
+    TokenResponse:
+      type: object
+      required:
+        - accessToken
+        - refreshToken
+      properties:
+        accessToken:
+          type: string
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+        refreshToken:
+          type: string
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+    LoginCredentials:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: 'a@a.a'
+          minLength: 5
+        password:
+          type: string
+          example: 'p.ssw0rd'
+          minLength: 6
+          maxLength: 30
+    Channel:
+      type: string
+      enum:
+        - CLIENT
+        - EMPLOYEE

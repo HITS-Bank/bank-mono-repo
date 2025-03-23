@@ -1,6 +1,7 @@
 package com.bank.hits.bankcoreservice.config.service;
 
 import com.bank.hits.bankcoreservice.api.dto.CloseAccountRequest;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -30,6 +31,7 @@ public class AccountEventConsumer {
     private final EmployeeService employeeService;
     private final KafkaProducerService kafkaProducerService;
     private final ClientService clientService;
+    private final ObjectMapper objectMapper;
 
     @KafkaListener(topics = "create.account", groupId = "bank.group")
     public void handleCreateAccount(final ConsumerRecord<String, UUID> record) {
@@ -54,11 +56,12 @@ public class AccountEventConsumer {
     }
 
     @KafkaListener(topics = "credit.approved", groupId = "bank.group")
-    public void handleCreditApproved(final ConsumerRecord<String, CreditApprovedDto> record) {
+    public void handleCreditApproved(final ConsumerRecord<String, String> record) {
         log.info("Received credit.create event: {}", record.value());
         try {
-            creditService.processCreditApproval(record.value());
-            log.info("Credit created successfully for client {}", record.value().getClientId());
+            CreditApprovedDto creditApprovedDto = objectMapper.readValue(record.value(), CreditApprovedDto.class);
+            creditService.processCreditApproval(creditApprovedDto);
+            log.info("Credit created successfully for client {}", creditApprovedDto.getClientId());
         } catch (Exception e) {
             log.error("Error processing credit.create event: {}", e.getMessage(), e);
         }
@@ -124,6 +127,7 @@ public class AccountEventConsumer {
             if (correlationId == null) { return;}
 
             final UUID clientId = UUID.fromString(record.value());
+            log.info("Client info request for client {}", clientId);
 
             final ClientInfoDto clientInfo = clientService.getClientInfoForCredit(clientId);
             log.info("clientInfo = {}", clientInfo);
@@ -136,13 +140,15 @@ public class AccountEventConsumer {
 
 
     @KafkaListener(topics = "credit.payment.request", groupId = "bank.group")
-    public void handleCreditRepayment(final ConsumerRecord<String, CreditRepaymentRequest> record) {
+    public void handleCreditRepayment(final ConsumerRecord<String, String> record) {
+        log.info("record: {}", record.value());
         try {
+            CreditRepaymentRequest repaymentRequest = objectMapper.readValue(record.value(), CreditRepaymentRequest.class);
             final UUID correlationId = parseCorrelationId(record);
             if (correlationId == null) { return;}
-            final CreditPaymentResponseDTO response = accountService.repayCredit(record.value());
+            final CreditPaymentResponseDTO response = accountService.repayCredit(repaymentRequest);
             kafkaProducerService.sendCreditPaymentResponse(response, correlationId);
-            log.info("Credit repayment processed for application {}", record.value().getCreditContractId());
+            log.info("Credit repayment processed for application {}", repaymentRequest.getCreditContractId());
         } catch (Exception e) {
             log.error("Error processing credit repayment event: {}", e.getMessage(), e);
         }
@@ -150,10 +156,15 @@ public class AccountEventConsumer {
 
     private UUID parseCorrelationId(final ConsumerRecord<String, ?> record) {
         final Header header = record.headers().lastHeader("correlation_id");
+        log.info("header: {}", header);
+        log.info("headers: {}", record.headers());
+        log.info("correlationId: {}", header.value());
+        log.info("record.value: {}", record.value());
         if (header == null) {
             log.warn("Получено сообщение без заголовка correlation_id");
             return null;
         }
+        log.info("correlation_id: {}", new String(header.value()));
         final UUID correlationId = UUID.fromString(new String(header.value()));
 
         return correlationId;

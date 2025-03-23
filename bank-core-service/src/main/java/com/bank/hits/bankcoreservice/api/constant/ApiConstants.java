@@ -32,4 +32,7 @@ public class ApiConstants {
     public static final String GET_ACCOUNTS = "/list";
     public static final String GET_ACCOUNT_BY_ACCOUNT_NUMBER = "/account"; // GET /api/v1/accounts/accountNumber/
     public static final String CREATE_CLIENT = "/client/create";
+
+    public static final String TRANSFER_INTERNAL = "/transfer/internal";
+    public static final String TRANSFER_EXTERNAL = "/transfer/external";
 }

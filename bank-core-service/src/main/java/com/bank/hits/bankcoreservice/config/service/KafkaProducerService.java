@@ -60,9 +60,9 @@ public class KafkaProducerService {
         try {
             final String message = objectMapper.writeValueAsString(response);
             kafkaTemplate.send("credit.payment.response", message);
-            log.info("Sent CREDIT_ACCOUNT_CREATED event: {}", response);
+            log.info("Sent CREDIT_PAYMENT_RESPONSE event: {}", response);
         } catch (final Exception e) {
-            log.error("Error sending CREDIT_ACCOUNT_CREATED event", e);
+            log.error("Error sending CREDIT_PAYMENT_RESPONSE event", e);
         }
 
     }

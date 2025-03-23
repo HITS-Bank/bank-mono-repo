@@ -4,6 +4,7 @@ import com.bank.hits.bankcreditservice.model.CreditHistory;
 import com.bank.hits.bankcreditservice.model.DTO.CreditPaymentProcessingDTO;
 import com.bank.hits.bankcreditservice.model.DTO.CreditPaymentRequestDTO;
 import com.bank.hits.bankcreditservice.model.DTO.CreditPaymentResponseDTO;
+import com.bank.hits.bankcreditservice.model.DTO.CreditRepaymentRequest;
 import com.bank.hits.bankcreditservice.repository.CreditHistoryRepository;
 import com.bank.hits.bankcreditservice.service.api.CreditPaymentService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -77,9 +79,10 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
         log.info("pay started");
         String correlationId = UUID.randomUUID().toString();
         try {
-            CreditPaymentProcessingDTO paymentDTO = new CreditPaymentProcessingDTO();
-            paymentDTO.setCreditApplicationId(creditId);
-            paymentDTO.setCreditAmount(amount);
+            CreditRepaymentRequest paymentDTO = new CreditRepaymentRequest();
+            paymentDTO.setCreditAmount(amount.toString());
+            paymentDTO.setCreditContractId(creditId);
+            paymentDTO.setEnrollmentDate(LocalDateTime.now());
 
             String message = objectMapper.writeValueAsString(paymentDTO);
             log.info("message при отправке оплаты: {}", message);
@@ -122,22 +125,22 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
 
         for (CreditHistory credit : activeCredits) {
             try {
-                log.info("Обрабатываем автоматический платеж для кредита {}", credit.getLoanNumber());
+                log.info("Обрабатываем автоматический платеж для кредита {}", credit.getNumber());
 
                 CreditPaymentRequestDTO request = new CreditPaymentRequestDTO();
-                request.setLoanNumber(credit.getLoanNumber());
+                request.setLoanNumber(credit.getNumber());
                 request.setPaymentAmount(credit.getMonthlyPayment());
 
                 boolean success = processPayment(request);
 
                 if (success) {
-                    log.info("Платёж для кредита {} успешно проведён", credit.getLoanNumber());
+                    log.info("Платёж для кредита {} успешно проведён", credit.getNumber());
                 } else {
-                    log.warn("Платёж для кредита {} не прошел", credit.getLoanNumber());
+                    log.warn("Платёж для кредита {} не прошел", credit.getNumber());
                 }
                 TimeUnit.SECONDS.sleep(1);
             } catch (Exception e) {
-                log.error("Ошибка при обработке кредита {}: {}", credit.getLoanNumber(), e.getMessage());
+                log.error("Ошибка при обработке кредита {}: {}", credit.getNumber(), e.getMessage());
             }
         }
     }

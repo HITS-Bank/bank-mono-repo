@@ -1,7 +1,9 @@
 package com.bank.hits.bankcoreservice.core.service;
 
+import com.bank.hits.bankcoreservice.core.utils.AccountNumberGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.bank.hits.bankcoreservice.api.dto.CreditApprovedDto;
@@ -40,12 +42,13 @@ public class CreditService {
     private final ClientRepository clientRepository;
     private final AccountRepository accountRepository;
     private final KafkaProducerService kafkaProducerService;
+    private final AccountNumberGenerator accountNumberGenerator;
 
     public List<CreditContractDto> getCreditsByClientId(final UUID clientId) {
         final var client = clientRepository.findByClientId(clientId)
                 .orElseThrow(() -> new RuntimeException("Client not found"));
         return creditContractRepository.findByClient(client).stream()
-                .sorted(Comparator.comparing(CreditContract::getCreatedDate).reversed())
+                .sorted(Comparator.comparing(CreditContract::getCreatedDate, Comparator.nullsLast(Comparator.reverseOrder())).reversed())
                 .map(creditContractMapper::map)
                 .toList();
     }
@@ -55,7 +58,7 @@ public class CreditService {
                 .orElseThrow(() -> new RuntimeException("Client not found"));
         final List<CreditContract> creditContracts = creditContractRepository.findByClient(client);
         return creditContractTransactionRepository.findByCreditContractIn(creditContracts).stream()
-                .sorted(Comparator.comparing(CreditTransaction::getPaymentDate).reversed())
+                .sorted(Comparator.comparing(CreditTransaction::getPaymentDate, Comparator.nullsLast(Comparator.reverseOrder())).reversed())
                 .map(creditTransactionMapper::map)
                 .toList();
     }
@@ -65,7 +68,13 @@ public class CreditService {
         log.info("Processing credit approval for client {}", creditApprovedDto.getClientId());
 
         final Client client = clientRepository.findByClientId(creditApprovedDto.getClientId())
-                        .orElse(clientRepository.save(new Client(creditApprovedDto.getClientId())));
+                .orElseGet(() -> {
+                    try {
+                        return clientRepository.insertIfNotExists(creditApprovedDto.getClientId()).get();
+                    } catch (DataIntegrityViolationException e) {
+                        return clientRepository.findByClientId(creditApprovedDto.getClientId()).orElseThrow();
+                    }
+                });
 
         final Account creditAccount = accountRepository.findByClientAndAccountType(client, AccountType.CREDIT)
                 .orElseGet(() -> createCreditAccount(client));
@@ -97,6 +106,7 @@ public class CreditService {
         newAccount.setClient(client);
         newAccount.setAccountType(AccountType.CREDIT);
         newAccount.setBalance(BigDecimal.ZERO);
+        newAccount.setAccountNumber(accountNumberGenerator.generateAccountNumber());
         return accountRepository.save(newAccount);
     }
 

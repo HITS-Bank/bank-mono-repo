@@ -1,6 +1,7 @@
 package com.bank.hits.bankcoreservice.core.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import com.bank.hits.bankcoreservice.api.dto.AccountDto;
 import com.bank.hits.bankcoreservice.api.dto.AccountTransactionDto;
@@ -15,6 +16,7 @@ import com.bank.hits.bankcoreservice.core.repository.ClientRepository;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ClientService {
@@ -59,6 +61,8 @@ public class ClientService {
                 .orElseThrow(() -> new RuntimeException("Client not found"));
         clientInfoDto.setClientId(clientId);
 
+        log.info("getClientInfoForCredit - {}", clientInfoDto);
+        log.info("client - {}", client);
         final List<AccountDto> accountDtos = accountService.getAccountsByClientId(clientId);
         clientInfoDto.setAccounts(accountDtos);
 
@@ -70,6 +74,8 @@ public class ClientService {
 
         final List<CreditTransactionDto> creditContractTransactionDtos = creditService.getCreditContractTransactionsByClientId(clientId);
         clientInfoDto.setCreditTransactions(creditContractTransactionDtos);
+
+        log.info("getClientInfoForCredit - {}", clientInfoDto);
 
         return clientInfoDto;
     }

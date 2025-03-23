@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -142,7 +143,7 @@ public class AccountService {
                 .orElseThrow(() -> new EntityNotFoundException("Client not found"));
         return accountRepository.findByClient(client).stream()
                 .flatMap(account -> accountTransactionRepository.findByAccountId(account.getId()).stream())
-                .sorted((t1, t2) -> t2.getTransactionDate().compareTo(t1.getTransactionDate()))
+                .sorted(Comparator.comparing(AccountTransaction::getTransactionDate, Comparator.nullsLast(Comparator.reverseOrder())))
                 .map(accountTransactionMapper::map)
                 .toList();
     }
@@ -235,5 +236,81 @@ public class AccountService {
         return new AccountsPaginationResponse(
                 new PageInfo(pageSize, pageNumber + 1),
                 accounts.stream().map(accountMapper::map).collect(Collectors.toList()));
+    }
+
+        private void validateTransfer(final Account source, final Account target, final String amountStr) {
+        if (source.isClosed() || target.isClosed()) {
+            throw new IllegalStateException("One of the accounts is closed");
+        }
+        if (source.isBlocked() || target.isBlocked()) {
+            throw new IllegalStateException("One of the accounts is blocked");
+        }
+
+        final var amount = new BigDecimal(amountStr);
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Transfer amount must be greater than zero");
+        }
+        if (source.getBalance().compareTo(amount) < 0) {
+            throw new IllegalStateException("Insufficient funds in source account");
+        }
+    }
+
+    @Transactional
+    public AccountDto transferBetweenOwnAccounts(final InternalTransferRequest request) {
+        final Account fromAccount = accountRepository.findById(request.getFromAccountId())
+                .orElseThrow(() -> new RuntimeException("Sender account not found"));
+        final Account toAccount = accountRepository.findById(request.getToAccountId())
+                .orElseThrow(() -> new RuntimeException("Recipient account not found"));
+
+        if (fromAccount.getBalance().compareTo(request.getAmount()) < 0) {
+            throw new RuntimeException("Not enough balance for transfer");
+        }
+
+        validateTransfer(fromAccount, toAccount, String.valueOf(request.getAmount()));
+
+        fromAccount.setBalance(fromAccount.getBalance().subtract(request.getAmount()));
+        toAccount.setBalance(toAccount.getBalance().add(request.getAmount()));
+
+        accountRepository.save(fromAccount);
+        accountRepository.save(toAccount);
+
+        recordAccountTransaction(fromAccount, OperationType.TRANSFER_OUT, request.getAmount());
+        recordAccountTransaction(toAccount, OperationType.TRANSFER_IN, request.getAmount());
+
+        return mapToDto(fromAccount);
+    }
+
+    @Transactional
+    public AccountDto transferToAnotherClient(final ExternalTransferRequest request) {
+        final Account fromAccount = accountRepository.findById(request.getFromAccountId())
+                .orElseThrow(() -> new RuntimeException("Sender account not found"));
+        final Account toAccount = accountRepository.findById(request.getToAccountId())
+                .orElseThrow(() -> new RuntimeException("Recipient account not found"));
+
+        if (!toAccount.getClient().getClientId().equals(request.getToClientId())) {
+            throw new IllegalArgumentException("Target account does not belong to the specified client");
+        }
+
+        if (fromAccount.getBalance().compareTo(request.getAmount()) < 0) {
+            throw new RuntimeException("Not enough balance for transfer");
+        }
+
+        fromAccount.setBalance(fromAccount.getBalance().subtract(request.getAmount()));
+        toAccount.setBalance(toAccount.getBalance().add(request.getAmount()));
+
+        accountRepository.save(fromAccount);
+        accountRepository.save(toAccount);
+
+        return mapToDto(fromAccount);
+    }
+
+    private AccountDto mapToDto(Account account) {
+        AccountDto dto = new AccountDto();
+        dto.setAccountId(account.getId());
+        dto.setBalance(String.valueOf(account.getBalance()));
+        dto.setAccountNumber(account.getAccountNumber());
+        dto.setClosed(account.isClosed());
+        dto.setBlocked(account.isBlocked());
+        return dto;
     }
 }

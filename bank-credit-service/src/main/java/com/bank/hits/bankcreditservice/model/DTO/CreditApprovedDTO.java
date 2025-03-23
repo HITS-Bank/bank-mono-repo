@@ -14,4 +14,5 @@ public class CreditApprovedDTO {
     private LocalDateTime approvedDate;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
+    private UUID creditId;
 }

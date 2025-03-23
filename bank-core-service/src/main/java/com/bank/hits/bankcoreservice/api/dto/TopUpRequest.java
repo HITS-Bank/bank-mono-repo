@@ -6,11 +6,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
+@NoArgsConstructor(force = true)
 @AllArgsConstructor
 public class TopUpRequest {
     @JsonProperty("accountNumber")
-    private final String accountNumber = null;
+    private final String accountNumber;
     @JsonProperty("amount")
-    private final String amount = null;
+    private final String amount;
 }

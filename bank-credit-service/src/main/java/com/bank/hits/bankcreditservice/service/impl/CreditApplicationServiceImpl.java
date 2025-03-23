@@ -92,6 +92,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         }
 
         String creditNumber = generateNumericString();
+        log.info("creditNumber: {}", creditNumber);
 
         CreditApplicationResponseDTO responseDTO = new CreditApplicationResponseDTO();
         responseDTO.setNumber(creditNumber);
@@ -121,6 +122,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         creditHistory.setClientUuid(UUID.fromString(clientUuid));
         creditHistory.setTotalAmount(request.getAmount());
         creditHistory.setMonthlyPayment(monthlyPayment);
+        creditHistory.setStartDate(LocalDateTime.now());
         creditHistory.setEndDate(LocalDateTime.now().plusMonths(request.getTermInMonths()));
         creditHistory.setRemainingDebt(totalPayment);
         creditHistory.setNumber(creditNumber);
@@ -229,6 +231,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
     private void sendCreditApprovedEvent(CreditHistory creditHistory) {
         try {
             CreditApprovedDTO approvedDto = new CreditApprovedDTO();
+            approvedDto.setCreditId(creditHistory.getId());
             approvedDto.setClientId(creditHistory.getClientUuid());
             approvedDto.setApprovedAmount(creditHistory.getTotalAmount());
             approvedDto.setRemainingAmount(creditHistory.getRemainingDebt());
@@ -254,12 +257,17 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
 
     public boolean approveCredit(CreditApplicationRequestDTO request, CreditClientInfoResponseDTO clientInfo) {
         if (hasOverdueCredits(clientInfo.getCredits())) {
+            log.info("Клиент имеет просроченные кредиты");
             return false;
         }
         if (!isAccountValid(request.getBankAccountNumber(), clientInfo.getAccounts())) {
+            log.info("Невалидный банковский счет");
+            log.info("request.getBankAccountNumber() = {}", request.getBankAccountNumber());
+            log.info("clientInfo.getAccounts() = {}", clientInfo.getAccounts());
             return false;
         }
         if (isCreditLoadTooHigh(clientInfo.getCredits(), request.getAmount())) {
+            log.info("Долговая нагрузка слишком высока");
             return false;
         }
         return true;
@@ -302,8 +310,12 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         record.headers().add("client_uuid", clientUuid.getBytes());
         record.headers().add("correlation_id", correlationId.getBytes());
         record.headers().add("timeoutExpire", "30".getBytes());
+
+        log.info("record {}", record);
         kafkaTemplate.send(record);
+        log.info("Отправлен запрос на получение информации о клиенте: {}", clientUuid);
         semaphoreMap.put(correlationId, new SemaphoreResponsePair(new Semaphore(0), null));
+
         return correlationId;
     }
 
