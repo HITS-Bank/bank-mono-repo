@@ -75,16 +75,16 @@ public class CreditApplicationController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/loan/pay")
+    @PostMapping("/loan/{loanId}/pay")
     public ResponseEntity<String> payCredit(@RequestBody CreditPaymentRequestDTO request) throws Exception {
         boolean success = creditPaymentService.processPayment(request);
         return success ? ResponseEntity.ok("Платёж успешно проведён") :
                 ResponseEntity.badRequest().body("Платёж не одобрен");
     }
 
-    @GetMapping("/loan/{loan}")
-    public ResponseEntity<UserLoansResponseDTO.LoanDTO> getloanByNumber(@PathVariable String loan) {
-        UserLoansResponseDTO.LoanDTO credit = creditApplicationService.getCreditByNumber(loan);
+    @GetMapping("/loan/{loanId}")
+    public ResponseEntity<UserLoansResponseDTO.LoanDTO> getloanByNumber(@PathVariable String loanId) {
+        UserLoansResponseDTO.LoanDTO credit = creditApplicationService.getCreditByNumber(loanId);
         return ResponseEntity.ok(credit);
     }
 }

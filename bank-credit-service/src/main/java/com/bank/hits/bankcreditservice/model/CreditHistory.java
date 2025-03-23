@@ -1,6 +1,7 @@
 package com.bank.hits.bankcreditservice.model;
 
 import lombok.Data;
+import org.apache.kafka.common.Uuid;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
 
@@ -25,6 +26,9 @@ public class CreditHistory {
 
     @Column(name = "bankAccountNumber", nullable = false)
     private String bankAccountNumber;
+
+    @Column(name = "bankAccountId", nullable = false)
+    private UUID bankAccountId;
 
     @Column(name = "number", nullable = false)
     private String number;

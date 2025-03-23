@@ -11,7 +11,7 @@ import java.util.UUID;
 public class UserLoansResponseDTO {
 
     private List<LoanDTO> loans;
-    private PageInfoDTO pageInfo;
+    //private PageInfoDTO pageInfo;
     @Data
     public static class LoanDTO {
         private String number;
@@ -19,6 +19,8 @@ public class UserLoansResponseDTO {
         private BigDecimal amount;
         private int termInMonths;
         private String bankAccountNumber;
+
+        private UUID bankAccountId;
         private BigDecimal paymentAmount;
         private BigDecimal paymentSum;
         private LocalDateTime nextPaymentDateTime;

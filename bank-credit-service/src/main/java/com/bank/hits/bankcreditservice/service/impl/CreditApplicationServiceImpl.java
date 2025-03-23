@@ -107,6 +107,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         responseDTO.setAmount(request.getAmount());
         responseDTO.setTermInMonths(request.getTermInMonths());
         responseDTO.setBankAccountNumber(request.getBankAccountNumber());
+        responseDTO.setBankAccountId(request.getBankAccountId());
 
         BigDecimal monthlyPayment = calculateMonthlyPayment(request.getAmount(), tariff.getInterestRate(), request.getTermInMonths());
         responseDTO.setPaymentAmount(monthlyPayment);
@@ -127,6 +128,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         creditHistory.setRemainingDebt(totalPayment);
         creditHistory.setNumber(creditNumber);
         creditHistory.setBankAccountNumber(request.getBankAccountNumber());
+        creditHistory.setBankAccountId(request.getBankAccountId());
         creditHistoryRepository.save(creditHistory);
         sendCreditApprovedEvent(creditHistory);
         return responseDTO;
@@ -153,7 +155,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         PageInfoDTO pageInfo = new PageInfoDTO(pageSize, pageNumber);
         UserLoansResponseDTO response = new UserLoansResponseDTO();
         response.setLoans(loans);
-        response.setPageInfo(pageInfo);
+        //response.setPageInfo(pageInfo);
 
         return response;
     }
@@ -210,6 +212,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         loanDTO.setAmount(credit.getTotalAmount());
         loanDTO.setTermInMonths((int) credit.getEndDate().minusMonths(credit.getStartDate().getMonthValue()).getMonthValue());
         loanDTO.setBankAccountNumber(credit.getBankAccountNumber());
+        loanDTO.setBankAccountId(credit.getBankAccountId());
         loanDTO.setPaymentAmount(credit.getMonthlyPayment());
         loanDTO.setPaymentSum(credit.getMonthlyPayment().multiply(BigDecimal.valueOf(loanDTO.getTermInMonths())));
         loanDTO.setNextPaymentDateTime(credit.getStartDate().plusMonths(1));

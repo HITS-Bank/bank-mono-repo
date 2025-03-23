@@ -11,4 +11,6 @@ public class CreditApplicationRequestDTO {
     private BigDecimal amount;
     private int termInMonths;
     private String bankAccountNumber;
+
+    private UUID bankAccountId;
 }
