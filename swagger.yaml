@@ -409,60 +409,6 @@ paths:
           description: Forbidden; возвращается, когда вызывающий - сотрудник или заблокированный клиент
         '500':
           description: Internal server error
-  /bank_account/transferInfo:
-    post:
-      tags:
-        - Bank Account
-      description: Запрос доступен только клиентам (если клиент не заблокирован)
-      security:
-        - bearerAuth: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TransferRequest'
-      responses:
-        '200':
-          description: Детали перевода получены
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TransferInfo'
-        '400':
-          description: Bad Request - некорректная сумма денег
-        '401':
-          description: Unauthorized; возвращается, когда либо вызывающий не авторизован, либо вызывающий - клиент, не имеющий доступ к счету отправителя
-        '403':
-          description: Forbidden; возвращается, когда вызвающий - сотрудник или заблокированный клиент
-        '404':
-          description: Not found; возвращается, когда не существует счёта отправителя или получателя
-        '500':
-          description: Internal server error
-  /bank_account/transfer:
-    post:
-      tags:
-        - Bank Account
-      description: Запрос доступен только клиентам (если клиент не заблокирован)
-      security:
-        - bearerAuth: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TransferRequest'
-      responses:
-        '204':
-          description: Средства переведены
-        '400':
-          description: Bad Request - некорректная сумма денег
-        '401':
-          description: Unauthorized; возвращается, когда либо вызывающий не авторизован, либо вызывающий - клиент, не имеющий доступ к счету отправителя
-        '403':
-          description: Forbidden; возвращается, когда вызывающий - сотрудник или заблокированный клиент
-        '404':
-          description: Not found; возвращается, когда не существует счёта отправителя или получателя
-        '500':
-          description: Internal server error
   /bank_account/{accountId}/operation_history:
     post:
       tags:
@@ -819,57 +765,6 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
-    TransferAccountInfo:
-      type: object
-      required:
-        - accountId
-        - accountNumber
-        - accountCurrencyCode
-      properties:
-        accountId:
-          type: string
-          format: uuid
-        accountNumber:
-          type: string
-          minLength: 20
-          maxLength: 20
-          example: '40802810500001846336'
-        accountCurrencyCode:
-          $ref: '#/components/schemas/CurrencyCode'
-    TransferInfo:
-      type: object
-      required:
-        - senderAccountInfo
-        - receiverAccountInfo
-        - transferAmountBeforeConversion
-        - transferAmountAfterConversion
-      properties:
-        senderAccountInfo:
-          $ref: '#/components/schemas/TransferAccountInfo'
-        receiverAccountInfo:
-          $ref: '#/components/schemas/TransferAccountInfo'
-        transferAmountBeforeConversion:
-          type: string
-          example: '300000000'
-        transferAmountAfterConversion:
-          type: string
-          example: '300000000'
-    TransferRequest:
-      type: object
-      required:
-        - senderAccountId
-        - receiverAccountId
-        - transferAmount
-      properties:
-        senderAccountId:
-          type: string
-          format: uuid
-        receiverAccountId:
-          type: string
-          format: uuid
-        transferAmount:
-          type: string
-          example: '300000000'
     CurrencyCode:
       type: string
       enum:
