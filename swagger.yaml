@@ -922,6 +922,7 @@ components:
         - amount
         - termInMonths
         - bankAccountId
+        - bankAccountNumber
         - paymentAmount
         - paymentSum
         - nextPaymentDateTime
@@ -950,6 +951,12 @@ components:
           description: Id счета, куда зачисляются и откуда списываются средства
           type: string
           format: uuid
+        bankAccountNumber:
+          description: Номер счета, куда зачисляются и откуда списываются средства
+          type: string
+          minLength: 20
+          maxLength: 20
+          example: '40802810500001846336'
         paymentAmount:
           description: Сумма следующей выплаты
           type: string
