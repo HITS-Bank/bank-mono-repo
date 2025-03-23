@@ -982,6 +982,7 @@ components:
         - amount
         - termInMonths
         - bankAccountId
+        - bankAccountNumber
       properties:
         tariffId:
           type: string
@@ -995,6 +996,11 @@ components:
         bankAccountId:
           type: string
           format: uuid
+        bankAccountNumber:
+          type: string
+          minLength: 20
+          maxLength: 20
+          example: '40802810500001846336'
     LoanTariff:
       type: object
       required:
