@@ -572,6 +572,11 @@ paths:
           schema:
             type: string
             format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanPaymentRequest'
       responses:
         '200':
           description: Выплата по кредиту прошла успешно
@@ -913,6 +918,14 @@ components:
           example: '300000000'
         currencyCode:
           $ref: '#/components/schemas/CurrencyCode'
+    LoanPaymentRequest:
+        type: object
+        required:
+          - amount
+        properties:
+          amount:
+            type: string
+            example: '300000000'
     Loan:
       type: object
       required:
