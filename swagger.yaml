@@ -1063,7 +1063,8 @@ components:
         - WITHDRAWAL
         - TOP_UP
         - LOAN_PAYMENT
-        - TRANSFER
+        - TRANSFER_INCOMING
+        - TRANSFER_OUTGOING
     Operation:
       type: object
       required:
