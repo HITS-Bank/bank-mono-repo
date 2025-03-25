@@ -161,7 +161,7 @@ paths:
       parameters:
         - name: role
           in: query
-          required: true
+          required: false
           schema:
             $ref: '#/components/schemas/Channel'
         - name: nameQuery
