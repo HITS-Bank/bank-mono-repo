@@ -4,4 +4,7 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
 		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <include file="V1__convert_account_null_currency_codes_to_rub.xml"
+             relativeToChangelogFile="true"/>
 </databaseChangeLog>

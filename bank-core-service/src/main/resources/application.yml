@@ -12,7 +12,9 @@ spring:
     password: 12345
     driver-class-name: org.postgresql.Driver
   liquibase:
-    enabled: false
+    enabled: true
+    change-log: classpath:/db/changelog/changelog.xml
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -30,9 +32,6 @@ spring:
     producer:
       bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:29092}
 
-logging:
-  liquibase:
-    change-log: classpath:db/changelog/changelog.xml
 
 springdoc:
   api-docs:
@@ -41,3 +40,7 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     enabled: true
+
+logging:
+  level:
+    liquibase.changelog: DEBUG

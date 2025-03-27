@@ -1,6 +1,7 @@
 package com.bank.hits.bankcoreservice.config.service;
 
 import com.bank.hits.bankcoreservice.api.dto.CloseAccountRequest;
+import com.bank.hits.bankcoreservice.api.enums.CurrencyCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +38,7 @@ public class AccountEventConsumer {
     public void handleCreateAccount(final ConsumerRecord<String, UUID> record) {
         log.info("Received create.account event: {}", record.value());
         try {
-            final AccountDto createdAccount = accountService.openAccount(record.value());
+            final AccountDto createdAccount = accountService.openAccount(record.value(), CurrencyCode.RUB);
             log.info("Account created successfully: {}", createdAccount);
         } catch (Exception e) {
             log.error("Error processing create.account event: {}", e.getMessage(), e);

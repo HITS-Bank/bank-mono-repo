@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import lombok.Data;
@@ -41,9 +42,9 @@ public class Account {
     private boolean blocked;
     private boolean closed;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "currency_code")
     @Enumerated(EnumType.STRING)
-    private CurrencyCode currencyCode;
+    private CurrencyCode currencyCode = CurrencyCode.RUB;
 
     @Column(name = "accountType")
     @Enumerated(EnumType.STRING)
@@ -59,4 +60,12 @@ public class Account {
         this.accountNumber = accountNumber;
         this.currencyCode = currencyCode;
     }
+
+    @PrePersist
+    private void prePersist() {
+        if (currencyCode == null) {
+            currencyCode = CurrencyCode.RUB;
+        }
+    }
+
 }
