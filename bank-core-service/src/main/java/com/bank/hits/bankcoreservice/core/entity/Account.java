@@ -1,5 +1,6 @@
 package com.bank.hits.bankcoreservice.core.entity;
 
+import com.bank.hits.bankcoreservice.api.enums.CurrencyCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -40,6 +41,10 @@ public class Account {
     private boolean blocked;
     private boolean closed;
 
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private CurrencyCode currencyCode;
+
     @Column(name = "accountType")
     @Enumerated(EnumType.STRING)
     private AccountType accountType;
@@ -49,8 +54,9 @@ public class Account {
 
     private LocalDateTime createdDate = LocalDateTime.now();
 
-    public Account(final Client client, final String accountNumber) {
+    public Account(final Client client, final String accountNumber, final CurrencyCode currencyCode) {
         this.client = client;
         this.accountNumber = accountNumber;
+        this.currencyCode = currencyCode;
     }
 }

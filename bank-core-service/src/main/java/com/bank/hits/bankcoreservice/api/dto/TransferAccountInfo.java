@@ -6,11 +6,8 @@ import lombok.Data;
 import java.util.UUID;
 
 @Data
-public class AccountDto {
+public class TransferAccountInfo {
     private UUID accountId;
     private String accountNumber;
-    private String balance;
-    private boolean blocked;
-    private boolean closed;
-    private CurrencyCode currencyCode;
+    private CurrencyCode accountCurrencyCode;
 }

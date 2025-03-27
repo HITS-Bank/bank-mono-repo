@@ -3,12 +3,12 @@ package com.bank.hits.bankcoreservice.api.rest;
 import com.bank.hits.bankcoreservice.api.constant.ApiConstants;
 
 import com.bank.hits.bankcoreservice.api.dto.AccountNumberRequest;
-import com.bank.hits.bankcoreservice.api.dto.AccountsPaginationResponse;
 import com.bank.hits.bankcoreservice.api.dto.CloseAccountRequest;
 import com.bank.hits.bankcoreservice.api.dto.ExternalTransferRequest;
-import com.bank.hits.bankcoreservice.api.dto.TopUpRequest;
-import com.bank.hits.bankcoreservice.api.dto.InternalTransferRequest;
-import com.bank.hits.bankcoreservice.api.dto.WithdrawRequest;
+import com.bank.hits.bankcoreservice.api.dto.ChangeBankAccountBalanceRequest;
+import com.bank.hits.bankcoreservice.api.dto.TransferInfo;
+import com.bank.hits.bankcoreservice.api.dto.TransferRequest;
+import com.bank.hits.bankcoreservice.api.enums.CurrencyCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -36,8 +36,8 @@ public class AccountController {
     private final AccountService accountService;
 
     @PostMapping(value = ApiConstants.CREATE_ACCOUNT, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AccountDto> createAccount(@RequestHeader("userId") final UUID clientId) {
-        return ResponseEntity.ok(accountService.openAccount(clientId));
+    public ResponseEntity<AccountDto> createAccount(@RequestHeader("userId") final UUID clientId, @RequestParam final CurrencyCode currencyCode) {
+        return ResponseEntity.ok(accountService.openAccount(clientId, currencyCode));
     }
 
     @PostMapping(value = ApiConstants.CLOSE_ACCOUNT, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -52,25 +52,24 @@ public class AccountController {
     }
 
     @GetMapping(value = ApiConstants.GET_ACCOUNTS, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AccountsPaginationResponse> getAccounts(@RequestHeader("userId") final UUID userId,
+    public ResponseEntity<List<AccountDto>> getAccounts(@RequestHeader("userId") final UUID userId,
                                                                   @RequestParam final int pageSize,
                                                                   @RequestParam final int pageNumber) {
         return ResponseEntity.ok(accountService.getAllClientAccounts(userId, pageSize, pageNumber - 1));
     }
 
-    @PostMapping(value = ApiConstants.GET_ACCOUNT_BY_ACCOUNT_NUMBER, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AccountDto> getAccount(@RequestBody final AccountNumberRequest accountNumberRequest) {
-        return ResponseEntity.ok(accountService.getAccountByAccountNumber(accountNumberRequest));
-    }
-
-    @PostMapping(value = ApiConstants.DEPOSIT, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AccountDto> deposit(@RequestHeader("userId") UUID clientId, @RequestBody final TopUpRequest transactionRequest) {
-        return ResponseEntity.ok(accountService.deposit(transactionRequest));
+    @PostMapping(value = ApiConstants.TOP_UP, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AccountDto> top_up(@RequestHeader("userId") UUID clientId,
+                                             @RequestParam final UUID accountId,
+                                             @RequestBody final ChangeBankAccountBalanceRequest changeBankAccountBalanceRequest) {
+        return ResponseEntity.ok(accountService.top_up(clientId, accountId, changeBankAccountBalanceRequest));
     }
 
     @PostMapping(value = ApiConstants.WITHDRAW, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AccountDto> withdraw(@RequestHeader("userId") UUID clientId, @RequestBody final WithdrawRequest transactionRequest) {
-        return ResponseEntity.ok(accountService.withdraw(transactionRequest));
+    public ResponseEntity<AccountDto> withdraw(@RequestHeader("userId") UUID clientId,
+                                               @RequestParam final UUID accountId,
+                                               @RequestBody final ChangeBankAccountBalanceRequest changeBankAccountBalanceRequest) {
+        return ResponseEntity.ok(accountService.withdraw(clientId, accountId, changeBankAccountBalanceRequest));
     }
 
     @PostMapping(value = ApiConstants.ACCOUNT_HISTORY, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -79,16 +78,16 @@ public class AccountController {
         return ResponseEntity.ok(accountService.getAccountHistory(request, pageSize, pageNumber - 1));
     }
 
-    @PostMapping(value = ApiConstants.TRANSFER_INTERNAL, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AccountDto> transferBetweenOwnAccounts(final @RequestHeader("userId") UUID clientId,
-                                                                 final @RequestBody InternalTransferRequest request) {
-        return ResponseEntity.ok(accountService.transferBetweenOwnAccounts(request));
+    @PostMapping(value = ApiConstants.TRANSFER, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AccountDto> transferMoneyBetweenAccounts(final @RequestHeader("userId") UUID clientId,
+                                                                   final @RequestBody TransferRequest request) {
+        return ResponseEntity.ok(accountService.transferMoneyBetweenAccounts(clientId, request));
     }
 
-    @PostMapping(value = ApiConstants.TRANSFER_EXTERNAL, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AccountDto> transferToAnotherClient(final @RequestHeader("userId") UUID clientId,
-                                                              final @RequestBody ExternalTransferRequest request) {
-        return ResponseEntity.ok(accountService.transferToAnotherClient(request));
+    @PostMapping(value = ApiConstants.TRANSFER_INFO, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<TransferInfo> getTransferInfo(final @RequestHeader("userId") UUID clientId,
+                                                        final @RequestBody TransferRequest request) {
+        return ResponseEntity.ok(accountService.getTransferInfo(clientId, request));
     }
 
 }

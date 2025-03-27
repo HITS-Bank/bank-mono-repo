@@ -4,6 +4,6 @@ public enum OperationType {
     TOP_UP,
     WITHDRAW,
     LOAN_PAYMENT,
-    TRANSFER_IN,
-    TRANSFER_OUT
+    TRANSFER_INCOMING,
+    TRANSFER_OUTGOING
 }

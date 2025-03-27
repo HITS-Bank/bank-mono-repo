@@ -1,7 +1,11 @@
 package com.bank.hits.bankcoreservice.core.service;
 
+import com.bank.hits.bankcoreservice.core.entity.Employee;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import com.bank.hits.bankcoreservice.api.dto.AccountDto;
 import com.bank.hits.bankcoreservice.api.dto.AccountTransactionDto;
@@ -27,30 +31,24 @@ public class ClientService {
     private final EmployeeService employeeService;
     private final ClientMapper clientMapper;
 
-    public ClientDto createClient(ClientDto clientDto) {
+    public ClientDto createClient(final ClientDto clientDto) {
         return clientMapper.map(clientRepository.save(new Client(clientDto.getClientId())));
     }
 
-    public ClientInfoDto getClientInfo(final UUID clientId, final UUID employeeId) {
-        final ClientInfoDto clientInfoDto = new ClientInfoDto();
-
+    public List<AccountDto> getAccountsList(final UUID clientId,
+                                         final UUID employeeId,
+                                         final int pageSize,
+                                         final int pageNumber) { // pageNumber - 1
         final Client client = clientRepository.findByClientId(clientId)
                 .orElseThrow(() -> new RuntimeException("Client not found"));
-        clientInfoDto.setClientId(client.getId());
 
-        final List<AccountDto> accountDtos = accountService.getAccountsByClientId(clientId);
-        clientInfoDto.setAccounts(accountDtos);
+        if (employeeService.isEmployeeBlocked(employeeId)) {
+            throw new RuntimeException("Employee is blocked");
+        }
 
-        final List<AccountTransactionDto> accountTransactionDtos = accountService.getAccountTransactionsByClientId(clientId);
-        clientInfoDto.setAccountTransactions(accountTransactionDtos);
+        final Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Order.desc("createdDate")));
 
-        final List<CreditContractDto> creditContractDtos = creditService.getCreditsByClientId(clientId);
-        clientInfoDto.setCredits(creditContractDtos);
-
-        final List<CreditTransactionDto> creditContractTransactionDtos = creditService.getCreditContractTransactionsByClientId(clientId);
-        clientInfoDto.setCreditTransactions(creditContractTransactionDtos);
-
-        return clientInfoDto;
+        return accountService.getAccountsByClientId(clientId, pageable);
     }
 
 

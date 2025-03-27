@@ -1,5 +1,6 @@
 package com.bank.hits.bankcoreservice.core.service;
 
+import com.bank.hits.bankcoreservice.api.enums.CurrencyCode;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +32,7 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
+
 @Slf4j
 @Service
 @AllArgsConstructor
@@ -48,11 +49,11 @@ public class AccountService {
 
 
     @Transactional
-    public AccountDto openAccount(final UUID clientId) {
+    public AccountDto openAccount(final UUID clientId, final CurrencyCode currencyCode) {
         final String generatedAccountNumber = accountNumberGenerator.generateAccountNumber();
         final Client client = clientRepository.findByClientId(clientId)
                 .orElseGet(() -> clientRepository.save(new Client(clientId)));
-        Account account = new Account(client, generatedAccountNumber);
+        Account account = new Account(client, generatedAccountNumber, currencyCode);
         account.setBalance(BigDecimal.ZERO);
         account = accountRepository.save(account);
         return accountMapper.map(account);
@@ -65,15 +66,11 @@ public class AccountService {
         accountRepository.save(account);
     }
 
-    public AccountDto deposit(final TopUpRequest request) {
-        final Account account = accountRepository.findByAccountNumber(request.getAccountNumber())
-                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
-        if (account.isClosed()) {
-            throw new EntityNotFoundException("Account is closed");
-        }
-        if (account.isBlocked()) {
-            throw new EntityNotFoundException("Account is blocked");
-        }
+
+
+    public AccountDto top_up(final UUID clientId, final UUID accountId, final ChangeBankAccountBalanceRequest request) {
+        final Account account = validateInputDataAndReturnAccount(clientId, accountId);
+
         final var amount = new BigDecimal(request.getAmount());
         account.setBalance(account.getBalance().add(amount));
         if (account.getBalance().compareTo(BigDecimal.ZERO) < 0) {
@@ -84,17 +81,10 @@ public class AccountService {
         return accountMapper.map(account);
     }
 
-    public AccountDto withdraw(final WithdrawRequest request) {
-        final Account account = accountRepository.findByAccountNumber(request.getAccountNumber())
-                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
-        if (account.isClosed()) {
-            throw new EntityNotFoundException("Account is closed");
-        }
-        if (account.isBlocked()) {
-            throw new EntityNotFoundException("Account is blocked");
-        }
-        final var amount = new BigDecimal(request.getAmount());
+    public AccountDto withdraw(final UUID clientId, final UUID accountId, final ChangeBankAccountBalanceRequest request) {
+        final Account account = validateInputDataAndReturnAccount(clientId, accountId);
 
+        final var amount = new BigDecimal(request.getAmount());
         account.setBalance(account.getBalance().subtract(amount));
         if (account.getBalance().compareTo(BigDecimal.ZERO) < 0) {
             throw new EntityNotFoundException("Insufficient funds");
@@ -102,6 +92,28 @@ public class AccountService {
         accountRepository.save(account);
         recordAccountTransaction(account, OperationType.WITHDRAW, amount);
         return accountMapper.map(account);
+    }
+
+    private Account validateInputDataAndReturnAccount(final UUID clientId, final UUID accountId) {
+        final Client client = clientRepository.findByClientId(clientId)
+                .orElseThrow(() -> new EntityNotFoundException("Client not found"));
+        if (client.isBlocked()) {
+            throw new EntityNotFoundException("Client is blocked");
+        }
+
+        final Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
+        if (!account.getClient().equals(client)) {
+            throw new EntityNotFoundException("Account does not belong to the specified client");
+        }
+        if (account.isClosed()) {
+            throw new EntityNotFoundException("Account is closed");
+        }
+        if (account.isBlocked()) {
+            throw new EntityNotFoundException("Account is blocked");
+        }
+
+        return account;
     }
 
     public void blockAccount(final UUID clientId) {
@@ -134,6 +146,14 @@ public class AccountService {
         final Client client = clientRepository.findByClientId(clientId)
                 .orElseThrow(() -> new EntityNotFoundException("Client not found"));
         return accountRepository.findByClient(client).stream()
+                .map(accountMapper::map)
+                .toList();
+    }
+
+    public List<AccountDto> getAccountsByClientId(final UUID clientId, final Pageable pageable) {
+        final Client client = clientRepository.findByClientId(clientId)
+                .orElseThrow(() -> new EntityNotFoundException("Client not found"));
+        return accountRepository.findByClient(client, pageable).stream()
                 .map(accountMapper::map)
                 .toList();
     }
@@ -173,7 +193,6 @@ public class AccountService {
             throw new IllegalStateException("Insufficient funds in account for repayment");
         }
 
-
         account.setBalance(account.getBalance().subtract(amount));
         accountRepository.save(account);
         recordCreditTransaction(creditContract, CreditTransactionType.CREDIT_REPAYMENT_AUTO, amount);
@@ -211,14 +230,7 @@ public class AccountService {
         return accountMapper.map(account);
     }
 
-    public AccountDto getAccountByAccountNumber(final AccountNumberRequest accountNumberRequest) {
-        final Account account = accountRepository.findByAccountNumber(accountNumberRequest.getAccountNumber())
-                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
-
-        return accountMapper.map(account);
-    }
-
-    public AccountsPaginationResponse getAllClientAccounts(final UUID clientId, int pageSize, int pageNumber) {
+    public List<AccountDto> getAllClientAccounts(final UUID clientId, final int pageSize, final int pageNumber) {
         final Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Order.desc("createdDate")));
 
         final Client client = clientRepository.findByClientId(clientId)
@@ -226,19 +238,18 @@ public class AccountService {
 
         if (client == null) {
             clientRepository.save(new Client(clientId));
-            return new AccountsPaginationResponse(
-                    new PageInfo(pageSize, pageNumber + 1),
-                    List.of()
-            );
+            return List.of();
         }
         final Page<Account> accounts = accountRepository.findByClient(client, pageable);
 
-        return new AccountsPaginationResponse(
-                new PageInfo(pageSize, pageNumber + 1),
-                accounts.stream().map(accountMapper::map).collect(Collectors.toList()));
+        return accounts.stream().map(accountMapper::map).toList();
     }
 
-        private void validateTransfer(final Account source, final Account target, final String amountStr) {
+    private void validateTransfer(final Client client, final Account source, final Account target, final String amountStr) {
+        if (!client.getId().equals(target.getId())) {
+            throw new IllegalArgumentException("Account does not belong to the specified client");
+        }
+
         if (source.isClosed() || target.isClosed()) {
             throw new IllegalStateException("One of the accounts is closed");
         }
@@ -247,70 +258,88 @@ public class AccountService {
         }
 
         final var amount = new BigDecimal(amountStr);
+
+        if (source.getBalance().compareTo(amount) < 0) {
+            throw new RuntimeException("Not enough balance for transfer");
+        }
+
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Transfer amount must be greater than zero");
         }
-        if (source.getBalance().compareTo(amount) < 0) {
-            throw new IllegalStateException("Insufficient funds in source account");
-        }
     }
 
     @Transactional
-    public AccountDto transferBetweenOwnAccounts(final InternalTransferRequest request) {
-        final Account fromAccount = accountRepository.findById(request.getFromAccountId())
-                .orElseThrow(() -> new RuntimeException("Sender account not found"));
-        final Account toAccount = accountRepository.findById(request.getToAccountId())
-                .orElseThrow(() -> new RuntimeException("Recipient account not found"));
+    public AccountDto transferMoneyBetweenAccounts(final UUID clientId, final TransferRequest request) {
+        final Client client = clientRepository.findByClientId(clientId)
+                .orElseThrow(() -> new EntityNotFoundException("Client not found"));
 
-        if (fromAccount.getBalance().compareTo(request.getAmount()) < 0) {
-            throw new RuntimeException("Not enough balance for transfer");
+        if (client.isBlocked()) {
+            throw new EntityNotFoundException("Client is blocked");
         }
 
-        validateTransfer(fromAccount, toAccount, String.valueOf(request.getAmount()));
+        final Account fromAccount = accountRepository.findById(request.getSenderAccountId())
+                .orElseThrow(() -> new RuntimeException("Sender account not found"));
+        final Account toAccount = accountRepository.findById(request.getReceiverAccountId())
+                .orElseThrow(() -> new RuntimeException("Recipient account not found"));
 
-        fromAccount.setBalance(fromAccount.getBalance().subtract(request.getAmount()));
-        toAccount.setBalance(toAccount.getBalance().add(request.getAmount()));
+        final BigDecimal transferAmount = new BigDecimal(request.getTransferAmount());
+
+        validateTransfer(client, fromAccount, toAccount, request.getTransferAmount());
+
+        fromAccount.setBalance(fromAccount.getBalance().subtract(transferAmount));
+        toAccount.setBalance(toAccount.getBalance().add(transferAmount));
 
         accountRepository.save(fromAccount);
         accountRepository.save(toAccount);
 
-        recordAccountTransaction(fromAccount, OperationType.TRANSFER_OUT, request.getAmount());
-        recordAccountTransaction(toAccount, OperationType.TRANSFER_IN, request.getAmount());
+        recordAccountTransaction(fromAccount, OperationType.TRANSFER_OUTGOING, transferAmount);
+        recordAccountTransaction(toAccount, OperationType.TRANSFER_INCOMING, transferAmount);
 
         return mapToDto(fromAccount);
     }
 
-    @Transactional
-    public AccountDto transferToAnotherClient(final ExternalTransferRequest request) {
-        final Account fromAccount = accountRepository.findById(request.getFromAccountId())
-                .orElseThrow(() -> new RuntimeException("Sender account not found"));
-        final Account toAccount = accountRepository.findById(request.getToAccountId())
-                .orElseThrow(() -> new RuntimeException("Recipient account not found"));
-
-        if (!toAccount.getClient().getClientId().equals(request.getToClientId())) {
-            throw new IllegalArgumentException("Target account does not belong to the specified client");
-        }
-
-        if (fromAccount.getBalance().compareTo(request.getAmount()) < 0) {
-            throw new RuntimeException("Not enough balance for transfer");
-        }
-
-        fromAccount.setBalance(fromAccount.getBalance().subtract(request.getAmount()));
-        toAccount.setBalance(toAccount.getBalance().add(request.getAmount()));
-
-        accountRepository.save(fromAccount);
-        accountRepository.save(toAccount);
-
-        return mapToDto(fromAccount);
-    }
-
-    private AccountDto mapToDto(Account account) {
-        AccountDto dto = new AccountDto();
+    private AccountDto mapToDto(final Account account) {
+        final AccountDto dto = new AccountDto();
         dto.setAccountId(account.getId());
         dto.setBalance(String.valueOf(account.getBalance()));
         dto.setAccountNumber(account.getAccountNumber());
         dto.setClosed(account.isClosed());
         dto.setBlocked(account.isBlocked());
         return dto;
+    }
+
+    public TransferInfo getTransferInfo(final UUID clientId, final TransferRequest request) {
+        final Client client = clientRepository.findByClientId(clientId)
+                .orElseThrow(() -> new EntityNotFoundException("Client not found"));
+
+        if (client.isBlocked()) {
+            throw new EntityNotFoundException("Client is blocked");
+        }
+
+        final Account fromAccount = accountRepository.findById(request.getSenderAccountId())
+                .orElseThrow(() -> new RuntimeException("Sender account not found"));
+
+        final Account toAccount = accountRepository.findById(request.getReceiverAccountId())
+                .orElseThrow(() -> new RuntimeException("Recipient account not found"));
+
+        final TransferInfo transferInfo = new TransferInfo();
+
+        final TransferAccountInfo fromAccountInfo = new TransferAccountInfo();
+        fromAccountInfo.setAccountId(fromAccount.getId());
+        fromAccountInfo.setAccountNumber(fromAccount.getAccountNumber());
+        fromAccountInfo.setAccountCurrencyCode(fromAccount.getCurrencyCode());
+
+        final TransferAccountInfo toAccountInfo = new TransferAccountInfo();
+        toAccountInfo.setAccountId(toAccount.getId());
+        toAccountInfo.setAccountNumber(toAccount.getAccountNumber());
+        toAccountInfo.setAccountCurrencyCode(toAccount.getCurrencyCode());
+
+        transferInfo.setSenderAccountInfo(fromAccountInfo);
+        transferInfo.setReceiverAccountInfo(toAccountInfo);
+        transferInfo.setTransferAmountBeforeConversion(request.getTransferAmount());
+
+        // TODO: add currency conversion logic here
+
+        return transferInfo;
     }
 }
