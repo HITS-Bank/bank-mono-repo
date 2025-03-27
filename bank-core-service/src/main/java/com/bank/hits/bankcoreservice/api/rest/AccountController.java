@@ -4,7 +4,6 @@ import com.bank.hits.bankcoreservice.api.constant.ApiConstants;
 
 import com.bank.hits.bankcoreservice.api.dto.AccountNumberRequest;
 import com.bank.hits.bankcoreservice.api.dto.CloseAccountRequest;
-import com.bank.hits.bankcoreservice.api.dto.ExternalTransferRequest;
 import com.bank.hits.bankcoreservice.api.dto.ChangeBankAccountBalanceRequest;
 import com.bank.hits.bankcoreservice.api.dto.TransferInfo;
 import com.bank.hits.bankcoreservice.api.dto.TransferRequest;
