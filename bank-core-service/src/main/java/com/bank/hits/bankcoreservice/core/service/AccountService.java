@@ -3,6 +3,7 @@ package com.bank.hits.bankcoreservice.core.service;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -46,13 +47,16 @@ public class AccountService {
     private final AccountTransactionMapper accountTransactionMapper;
     private final AccountMapper accountMapper;
 
+    @Autowired
+    private CurrencyConversionService conversionService;
+
 
     @Transactional
-    public AccountDto openAccount(final UUID clientId) {
+    public AccountDto openAccount(final UUID clientId, final CurrencyCode currencyCode) {
         final String generatedAccountNumber = accountNumberGenerator.generateAccountNumber();
         final Client client = clientRepository.findByClientId(clientId)
                 .orElseGet(() -> clientRepository.save(new Client(clientId)));
-        Account account = new Account(client, generatedAccountNumber);
+        Account account = new Account(client, generatedAccountNumber, currencyCode);
         account.setBalance(BigDecimal.ZERO);
         account = accountRepository.save(account);
         return accountMapper.map(account);
@@ -65,8 +69,8 @@ public class AccountService {
         accountRepository.save(account);
     }
 
-    public AccountDto deposit(final TopUpRequest request) {
-        final Account account = accountRepository.findByAccountNumber(request.getAccountNumber())
+    public AccountDto deposit(final TopUpRequest request, String accountId) {
+        final Account account = accountRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new EntityNotFoundException("Account not found"));
         if (account.isClosed()) {
             throw new EntityNotFoundException("Account is closed");
@@ -74,8 +78,21 @@ public class AccountService {
         if (account.isBlocked()) {
             throw new EntityNotFoundException("Account is blocked");
         }
+        final var inputCurrency = request.getCurrencyCode();
+        final var accountCurrency = account.getCurrencyCode();
         final var amount = new BigDecimal(request.getAmount());
-        account.setBalance(account.getBalance().add(amount));
+
+        BigDecimal convertedAmount;
+        if(inputCurrency != accountCurrency) {
+            try {
+                convertedAmount = conversionService.convert(inputCurrency, accountCurrency, amount);
+            } catch (Exception ex) {
+                throw new RuntimeException("Error during currency conversion");
+            }
+        }
+        else convertedAmount = amount;
+
+        account.setBalance(account.getBalance().add(convertedAmount));
         if (account.getBalance().compareTo(BigDecimal.ZERO) < 0) {
             throw new EntityNotFoundException("Insufficient funds");
         }
@@ -84,8 +101,8 @@ public class AccountService {
         return accountMapper.map(account);
     }
 
-    public AccountDto withdraw(final WithdrawRequest request) {
-        final Account account = accountRepository.findByAccountNumber(request.getAccountNumber())
+    public AccountDto withdraw(final WithdrawRequest request, final String accountId) {
+        final Account account = accountRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new EntityNotFoundException("Account not found"));
         if (account.isClosed()) {
             throw new EntityNotFoundException("Account is closed");
@@ -93,9 +110,23 @@ public class AccountService {
         if (account.isBlocked()) {
             throw new EntityNotFoundException("Account is blocked");
         }
+        final var inputCurrency = request.getCurrencyCode();
+        final var accountCurrency = account.getCurrencyCode();
         final var amount = new BigDecimal(request.getAmount());
 
-        account.setBalance(account.getBalance().subtract(amount));
+        BigDecimal convertedAmount;
+        if(inputCurrency != accountCurrency) {
+            try {
+                convertedAmount = conversionService.convert(inputCurrency, accountCurrency, amount);
+            } catch (Exception ex) {
+                throw new RuntimeException("Error during currency conversion");
+            }
+        }
+        else {
+            convertedAmount = amount;
+        }
+
+        account.setBalance(account.getBalance().subtract(convertedAmount));
         if (account.getBalance().compareTo(BigDecimal.ZERO) < 0) {
             throw new EntityNotFoundException("Insufficient funds");
         }
@@ -267,9 +298,27 @@ public class AccountService {
         }
 
         validateTransfer(fromAccount, toAccount, String.valueOf(request.getAmount()));
+        final CurrencyCode fromCurrency = fromAccount.getCurrencyCode();
+        final CurrencyCode toCurrency = toAccount.getCurrencyCode();
+        final BigDecimal originalAmount = request.getAmount();
+        BigDecimal convertedAmount = null;
+        if(fromCurrency != toCurrency)
+        {
+            try{
+                convertedAmount = conversionService.convert(fromCurrency, toCurrency, originalAmount);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException("Error during currency conversion");
+            }
+        }
+        else {
+            convertedAmount = originalAmount;
+        }
 
-        fromAccount.setBalance(fromAccount.getBalance().subtract(request.getAmount()));
-        toAccount.setBalance(toAccount.getBalance().add(request.getAmount()));
+
+        fromAccount.setBalance(fromAccount.getBalance().subtract(originalAmount));
+        toAccount.setBalance(toAccount.getBalance().add(convertedAmount));
 
         accountRepository.save(fromAccount);
         accountRepository.save(toAccount);
@@ -295,8 +344,24 @@ public class AccountService {
             throw new RuntimeException("Not enough balance for transfer");
         }
 
-        fromAccount.setBalance(fromAccount.getBalance().subtract(request.getAmount()));
-        toAccount.setBalance(toAccount.getBalance().add(request.getAmount()));
+        final CurrencyCode fromCurrency = fromAccount.getCurrencyCode();
+        final CurrencyCode toCurrency = toAccount.getCurrencyCode();
+        final BigDecimal originalAmount = request.getAmount();
+        BigDecimal convertedAmount = null;
+        if(fromCurrency != toCurrency)
+        {
+            try{
+                convertedAmount = conversionService.convert(fromCurrency, toCurrency, originalAmount);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException("Error during currency conversion");
+            }
+        }
+
+
+        fromAccount.setBalance(fromAccount.getBalance().subtract(originalAmount));
+        toAccount.setBalance(toAccount.getBalance().add(convertedAmount));
 
         accountRepository.save(fromAccount);
         accountRepository.save(toAccount);

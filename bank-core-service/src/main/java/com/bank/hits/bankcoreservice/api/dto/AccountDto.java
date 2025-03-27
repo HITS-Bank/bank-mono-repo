@@ -11,4 +11,5 @@ public class AccountDto {
     private String balance;
     private boolean blocked;
     private boolean closed;
+    private String currencyCode;
 }

@@ -2,13 +2,7 @@ package com.bank.hits.bankcoreservice.api.rest;
 
 import com.bank.hits.bankcoreservice.api.constant.ApiConstants;
 
-import com.bank.hits.bankcoreservice.api.dto.AccountNumberRequest;
-import com.bank.hits.bankcoreservice.api.dto.AccountsPaginationResponse;
-import com.bank.hits.bankcoreservice.api.dto.CloseAccountRequest;
-import com.bank.hits.bankcoreservice.api.dto.ExternalTransferRequest;
-import com.bank.hits.bankcoreservice.api.dto.TopUpRequest;
-import com.bank.hits.bankcoreservice.api.dto.InternalTransferRequest;
-import com.bank.hits.bankcoreservice.api.dto.WithdrawRequest;
+import com.bank.hits.bankcoreservice.api.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -20,8 +14,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import com.bank.hits.bankcoreservice.api.dto.AccountDto;
-import com.bank.hits.bankcoreservice.api.dto.AccountTransactionDto;
 import com.bank.hits.bankcoreservice.core.service.AccountService;
 
 import java.util.List;
@@ -36,8 +28,8 @@ public class AccountController {
     private final AccountService accountService;
 
     @PostMapping(value = ApiConstants.CREATE_ACCOUNT, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AccountDto> createAccount(@RequestHeader("userId") final UUID clientId) {
-        return ResponseEntity.ok(accountService.openAccount(clientId));
+    public ResponseEntity<AccountDto> createAccount(@RequestHeader("userId") final UUID clientId, @RequestParam CurrencyCode currencyCode) {
+        return ResponseEntity.ok(accountService.openAccount(clientId, currencyCode));
     }
 
     @PostMapping(value = ApiConstants.CLOSE_ACCOUNT, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -64,13 +56,13 @@ public class AccountController {
     }
 
     @PostMapping(value = ApiConstants.DEPOSIT, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AccountDto> deposit(@RequestHeader("userId") UUID clientId, @RequestBody final TopUpRequest transactionRequest) {
-        return ResponseEntity.ok(accountService.deposit(transactionRequest));
+    public ResponseEntity<AccountDto> deposit(@RequestHeader("userId") UUID clientId, @RequestBody final TopUpRequest transactionRequest, @RequestParam String accountId) {
+        return ResponseEntity.ok(accountService.deposit(transactionRequest, accountId));
     }
 
     @PostMapping(value = ApiConstants.WITHDRAW, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AccountDto> withdraw(@RequestHeader("userId") UUID clientId, @RequestBody final WithdrawRequest transactionRequest) {
-        return ResponseEntity.ok(accountService.withdraw(transactionRequest));
+    public ResponseEntity<AccountDto> withdraw(@RequestHeader("userId") UUID clientId, @RequestBody final WithdrawRequest transactionRequest, @RequestParam String accountId) {
+        return ResponseEntity.ok(accountService.withdraw(transactionRequest, accountId));
     }
 
     @PostMapping(value = ApiConstants.ACCOUNT_HISTORY, produces = MediaType.APPLICATION_JSON_VALUE)
