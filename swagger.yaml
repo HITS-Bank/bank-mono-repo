@@ -371,6 +371,10 @@ paths:
       responses:
         '204':
           description: Счет пополнен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankAccount'
         '400':
           description: Bad Request - некорректная сумма денег
         '401':
@@ -401,6 +405,10 @@ paths:
       responses:
         '204':
           description: Средства сняты со счёта
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankAccount'
         '400':
           description: Bad Request - некорректная сумма денег
         '401':
@@ -453,6 +461,10 @@ paths:
       responses:
         '204':
           description: Средства переведены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankAccount'
         '400':
           description: Bad Request - некорректная сумма денег
         '401':
