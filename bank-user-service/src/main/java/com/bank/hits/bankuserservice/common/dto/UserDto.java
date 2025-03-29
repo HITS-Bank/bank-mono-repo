@@ -1,29 +1,16 @@
 package com.bank.hits.bankuserservice.common.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import com.bank.hits.bankuserservice.common.enums.Role;
 import lombok.Data;
-import com.bank.hits.bankuserservice.common.model.UserEntity;
 
-import java.util.UUID;
+import java.util.List;
 
 @Data
 public class UserDto {
 
-    @NotBlank
-    private UUID id;
-
-    @NotBlank
+    private String id;
     private String firstName;
-
-    @NotBlank
     private String lastName;
-
-    @NotBlank
-    private String email;
-
-    @NotNull
-    private UserEntity.Role role;
-
-    private Boolean isBanned;
+    private List<Role> roles;
+    private Boolean isBlocked;
 }

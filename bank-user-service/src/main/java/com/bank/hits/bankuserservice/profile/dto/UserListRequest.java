@@ -1,11 +1,12 @@
 package com.bank.hits.bankuserservice.profile.dto;
 
-import com.bank.hits.bankuserservice.common.model.UserEntity;
+import com.bank.hits.bankuserservice.common.enums.Role;
+import jakarta.validation.constraints.Positive;
 
 public record UserListRequest(
-        UserEntity.Role role,
+        Role role,
         String nameQuery,
         int pageSize,
-        int pageNumber
+        @Positive int pageNumber
 ) {
 }

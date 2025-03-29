@@ -1,11 +1,12 @@
 package com.bank.hits.bankuserservice.auth.dto;
 
-import jakarta.validation.constraints.Email;
+import com.bank.hits.bankuserservice.common.enums.Role;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import com.bank.hits.bankuserservice.common.model.UserEntity;
+
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -18,12 +19,8 @@ public class RegisterRequest {
     private String lastName;
 
     @NotBlank
-    @Email
-    private String email;
-
-    @NotBlank
     private String password;
 
-    @NotNull
-    private UserEntity.Role role;
+    @NotEmpty
+    private List<Role> roles;
 }
