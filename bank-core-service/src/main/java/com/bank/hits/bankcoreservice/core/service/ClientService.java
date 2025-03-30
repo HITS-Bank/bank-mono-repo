@@ -1,14 +1,10 @@
 package com.bank.hits.bankcoreservice.core.service;
 
+import com.bank.hits.bankcoreservice.api.dto.*;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import com.bank.hits.bankcoreservice.api.dto.AccountDto;
-import com.bank.hits.bankcoreservice.api.dto.AccountTransactionDto;
-import com.bank.hits.bankcoreservice.api.dto.ClientDto;
-import com.bank.hits.bankcoreservice.api.dto.ClientInfoDto;
-import com.bank.hits.bankcoreservice.api.dto.CreditContractDto;
-import com.bank.hits.bankcoreservice.api.dto.CreditTransactionDto;
 import com.bank.hits.bankcoreservice.core.entity.Client;
 import com.bank.hits.bankcoreservice.core.mapper.ClientMapper;
 import com.bank.hits.bankcoreservice.core.repository.ClientRepository;
@@ -75,11 +71,18 @@ public class ClientService {
         final List<CreditTransactionDto> creditContractTransactionDtos = creditService.getCreditContractTransactionsByClientId(clientId);
         clientInfoDto.setCreditTransactions(creditContractTransactionDtos);
 
+        clientInfoDto.setCreditRating(client.getCreditRating());
         log.info("getClientInfoForCredit - {}", clientInfoDto);
 
         return clientInfoDto;
     }
 
+    public CreditRatingResponseDTO getCreditRating(UUID clientId)
+    {
+        Client client = clientRepository.findByClientId(clientId)
+                .orElseThrow(() -> new EntityNotFoundException("Клиент не найден: " + clientId));
+        return new CreditRatingResponseDTO(client.getCreditRating());
+    }
 
     public void blockClientAccounts(final UUID clientId) {
         final Client client = clientRepository.findByClientId(clientId)

@@ -10,4 +10,5 @@ public class CreditRepaymentRequest {
     private UUID creditContractId;
     private String creditAmount;
     private LocalDateTime enrollmentDate;
+    private PaymentStatus paymentStatus;
 }

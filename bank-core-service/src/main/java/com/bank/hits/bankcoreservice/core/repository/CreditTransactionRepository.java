@@ -1,5 +1,6 @@
 package com.bank.hits.bankcoreservice.core.repository;
 
+import com.bank.hits.bankcoreservice.core.entity.OverduePayment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import com.bank.hits.bankcoreservice.core.entity.CreditContract;
@@ -11,5 +12,7 @@ import java.util.UUID;
 
 @Repository
 public interface CreditTransactionRepository extends JpaRepository<CreditTransaction, UUID> {
-    List<CreditTransaction> findByCreditContractIn(Collection<CreditContract> creditContracts);
+    List<CreditTransaction> findByCreditContractId(Collection<CreditContract> creditContracts);
+
+    List<CreditTransaction> findByCreditContractId(UUID creditContractId);
 }

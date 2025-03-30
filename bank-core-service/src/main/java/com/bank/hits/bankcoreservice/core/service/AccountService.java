@@ -1,5 +1,7 @@
 package com.bank.hits.bankcoreservice.core.service;
 
+import com.bank.hits.bankcoreservice.core.entity.*;
+import com.bank.hits.bankcoreservice.core.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,23 +14,14 @@ import org.springframework.stereotype.Service;
 import com.bank.hits.bankcoreservice.api.dto.*;
 import com.bank.hits.bankcoreservice.api.enums.OperationType;
 import com.bank.hits.bankcoreservice.api.enums.CreditTransactionType;
-import com.bank.hits.bankcoreservice.core.entity.Account;
-import com.bank.hits.bankcoreservice.core.entity.AccountTransaction;
-import com.bank.hits.bankcoreservice.core.entity.Client;
-import com.bank.hits.bankcoreservice.core.entity.CreditContract;
-import com.bank.hits.bankcoreservice.core.entity.CreditTransaction;
 import com.bank.hits.bankcoreservice.core.mapper.AccountMapper;
 import com.bank.hits.bankcoreservice.core.mapper.AccountTransactionMapper;
-import com.bank.hits.bankcoreservice.core.repository.AccountRepository;
-import com.bank.hits.bankcoreservice.core.repository.ClientRepository;
-import com.bank.hits.bankcoreservice.core.repository.CreditContractRepository;
-import com.bank.hits.bankcoreservice.core.repository.AccountTransactionRepository;
-import com.bank.hits.bankcoreservice.core.repository.CreditTransactionRepository;
 import com.bank.hits.bankcoreservice.core.utils.AccountNumberGenerator;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -38,6 +31,7 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class AccountService {
 
+    private final CreditRatingService creditRatingService;
     private final AccountRepository accountRepository;
     private final CreditContractRepository creditContractRepository;
     private final AccountTransactionRepository accountTransactionRepository;
@@ -46,6 +40,7 @@ public class AccountService {
     private final AccountNumberGenerator accountNumberGenerator;
     private final AccountTransactionMapper accountTransactionMapper;
     private final AccountMapper accountMapper;
+    private final OverduePaymentRepository overduePaymentRepository;
 
     @Autowired
     private CurrencyConversionService conversionService;
@@ -201,16 +196,26 @@ public class AccountService {
 
         final var amount = new BigDecimal(repaymentRequest.getCreditAmount());
         if (account.getBalance().subtract(amount).compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalStateException("Insufficient funds in account for repayment");
+            OverduePayment overduePayment = new OverduePayment();
+            overduePayment.setCreditContractId(creditContract.getCreditContractId());
+            overduePayment.setPaymentAmount(amount);
+            overduePayment.setPaymentDate(LocalDateTime.now());
+            overduePaymentRepository.save(overduePayment);
+            return new CreditPaymentResponseDTO(false, account.getBalance().toString());
         }
 
 
         account.setBalance(account.getBalance().subtract(amount));
         accountRepository.save(account);
-        recordCreditTransaction(creditContract, CreditTransactionType.CREDIT_REPAYMENT_AUTO, amount);
+        recordCreditTransaction(creditContract, CreditTransactionType.CREDIT_REPAYMENT_AUTO, amount, repaymentRequest.getPaymentStatus());
 
         creditContract.setRemainingAmount(creditContract.getRemainingAmount().max(BigDecimal.ZERO));
         creditContractRepository.save(creditContract);
+
+        if (creditContract.getRemainingAmount().compareTo(BigDecimal.ZERO) == 0) {
+            Client client = account.getClient();
+            creditRatingService.updateCreditRating(client, creditContract);
+        }
         return new CreditPaymentResponseDTO(true, account.getBalance().toString());
     }
 
@@ -225,13 +230,14 @@ public class AccountService {
         accountTransactionRepository.save(tx);
     }
 
-    private void recordCreditTransaction(final CreditContract creditContract, final CreditTransactionType type, final BigDecimal amount) {
+    private void recordCreditTransaction(final CreditContract creditContract, final CreditTransactionType type, final BigDecimal amount, final PaymentStatus paymentStatus) {
         final CreditTransaction tx = new CreditTransaction();
 
         tx.setCreditContract(creditContract);
         tx.setTransactionType(type);
         tx.setPaymentAmount(amount);
         tx.setPaymentDate(LocalDateTime.now());
+        tx.setPaymentStatus(paymentStatus);
 
         creditTransactionRepository.save(tx);
     }
@@ -377,5 +383,31 @@ public class AccountService {
         dto.setClosed(account.isClosed());
         dto.setBlocked(account.isBlocked());
         return dto;
+    }
+
+    public List<PaymentResponseDTO> getPayments(UUID loanId)
+    {
+        List<PaymentResponseDTO> result = new ArrayList<>();
+        List<CreditTransaction> successfulPayments = creditTransactionRepository.findByCreditContractId(loanId);
+        for (CreditTransaction tx : successfulPayments) {
+            PaymentResponseDTO dto = new PaymentResponseDTO();
+            dto.setId(tx.getTransactionId());
+            dto.setStatus(tx.getPaymentStatus().toString());
+            dto.setDateTime(tx.getPaymentDate());
+            dto.setAmount(tx.getPaymentAmount());
+            dto.setCurrencyCode("RUB");
+            result.add(dto);
+        }
+        List<OverduePayment> overduePayments = overduePaymentRepository.findByCreditContractId(loanId);
+        for (OverduePayment op : overduePayments) {
+            PaymentResponseDTO dto = new PaymentResponseDTO();
+            dto.setId(op.getId());
+            dto.setStatus("OVERDUE");
+            dto.setDateTime(op.getPaymentDate());
+            dto.setAmount(op.getPaymentAmount());
+            dto.setCurrencyCode("RUB");
+            result.add(dto);
+        }
+        return result;
     }
 }

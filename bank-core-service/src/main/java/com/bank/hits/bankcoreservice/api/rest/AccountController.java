@@ -83,4 +83,9 @@ public class AccountController {
         return ResponseEntity.ok(accountService.transferToAnotherClient(request));
     }
 
+    @GetMapping("/loan/{loanId}/payments")
+    public List<PaymentResponseDTO> getPayments(@PathVariable("loanId") UUID loanId) {
+        return ResponseEntity.ok(accountService.getPayments(loanId)).getBody();
+    }
+
 }

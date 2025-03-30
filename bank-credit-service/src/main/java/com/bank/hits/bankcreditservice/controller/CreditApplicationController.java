@@ -1,10 +1,7 @@
 package com.bank.hits.bankcreditservice.controller;
 
 import com.bank.hits.bankcreditservice.exception.ForbiddenAccessException;
-import com.bank.hits.bankcreditservice.model.DTO.CreditApplicationRequestDTO;
-import com.bank.hits.bankcreditservice.model.DTO.CreditApplicationResponseDTO;
-import com.bank.hits.bankcreditservice.model.DTO.CreditPaymentRequestDTO;
-import com.bank.hits.bankcreditservice.model.DTO.UserLoansResponseDTO;
+import com.bank.hits.bankcreditservice.model.DTO.*;
 import com.bank.hits.bankcreditservice.service.api.CreditApplicationService;
 import com.bank.hits.bankcreditservice.service.api.CreditPaymentService;
 import com.bank.hits.bankcreditservice.service.api.EmployeeVerificationService;
@@ -77,7 +74,7 @@ public class CreditApplicationController {
 
     @PostMapping("/loan/{loanId}/pay")
     public ResponseEntity<String> payCredit(@RequestBody CreditPaymentRequestDTO request) throws Exception {
-        boolean success = creditPaymentService.processPayment(request);
+        boolean success = creditPaymentService.processPayment(request, PaymentStatus.MANUAL);
         return success ? ResponseEntity.ok("Платёж успешно проведён") :
                 ResponseEntity.badRequest().body("Платёж не одобрен");
     }

@@ -8,6 +8,8 @@ import java.util.UUID;
 @Data
 public class ClientInfoDto {
     private UUID clientId;
+
+    private int creditRating;
     private List<AccountDto> accounts;
     private List<CreditContractDto> credits;
     private List<CreditTransactionDto> creditTransactions;

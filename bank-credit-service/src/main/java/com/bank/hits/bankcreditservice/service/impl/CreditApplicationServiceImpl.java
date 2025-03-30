@@ -273,6 +273,21 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
             log.info("Долговая нагрузка слишком высока");
             return false;
         }
+        int creditRating = clientInfo.getCreditRating();
+        int requiredMinimumCreditRating = 5;
+        if (creditRating < requiredMinimumCreditRating) {
+            log.info("Низкий кредитный рейтинг: {}. Минимально допустимый рейтинг: {}", creditRating, requiredMinimumCreditRating);
+            return false;
+        }
+
+        // допустимый лимит = рейтинг * 1000.
+        BigDecimal allowedCreditLimit = BigDecimal.valueOf(creditRating).multiply(new BigDecimal("1000"));
+        if (request.getAmount().compareTo(allowedCreditLimit) > 0) {
+            log.info("Запрошенная сумма {} превышает кредитный лимит {} (основанный на кредитном рейтинге {})", request.getAmount(), allowedCreditLimit, creditRating);
+            return false;
+        }
+
+
         return true;
     }
 
