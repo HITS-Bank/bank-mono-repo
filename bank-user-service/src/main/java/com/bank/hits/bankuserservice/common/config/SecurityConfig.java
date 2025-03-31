@@ -17,30 +17,8 @@ import org.springframework.security.web.SecurityFilterChain;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    //    private final JwtRequestFilter jwtRequestFilter;
     private final JwtAuthConverter jwtAuthConverter;
 
-//    @Bean
-//    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-//        http
-//                .csrf(AbstractHttpConfigurer::disable)
-//                .cors(AbstractHttpConfigurer::disable)
-//                .authorizeHttpRequests(auth -> auth
-////                        .requestMatchers("/employee/**").hasRole("employee")
-////                        .requestMatchers("/users/profile/test").hasRole("employee")
-////                        .anyRequest().permitAll()
-//                                .anyRequest().authenticated()
-//                )
-//                .oauth2ResourceServer(oauth2 ->
-//                        oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthConverter))
-//                )
-//                .sessionManagement(c -> c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//                .exceptionHandling(c -> c.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)));
-
-    /// /                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
-//
-//        return http.build();
-//    }
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -59,16 +37,4 @@ public class SecurityConfig {
 
         return http.build();
     }
-
-//    @Bean
-//    public BCryptPasswordEncoder passwordEncoder() {
-//        return new BCryptPasswordEncoder();
-//    }
-//
-//    @Bean
-//    public AuthenticationManager authenticationManager(
-//            AuthenticationConfiguration authenticationConfiguration
-//    ) throws Exception {
-//        return authenticationConfiguration.getAuthenticationManager();
-//    }
 }
