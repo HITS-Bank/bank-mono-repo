@@ -177,6 +177,24 @@ services:
         REDIS_PORT: 6379
         APP_PORT: 9445
 
+    keycloak:
+      image: keycloak/keycloak:latest
+      environment:
+        - KEYCLOAK_ADMIN=admin
+        - KEYCLOAK_ADMIN_PASSWORD=admin
+        - DB_VENDOR=POSTGRES
+        - DB_ADDR=db
+        - DB_DATABASE=keycloak
+        - DB_USER=keycloak
+        - DB_PASSWORD=keycloak
+        - KC_HOSTNAME=http://keycloak:8080/
+        - KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true
+      command: start-dev
+      ports:
+        - "8080:8080"
+      networks:
+        - network-local
+
 
     gateway-app:
       container_name: gateway-app
@@ -205,6 +223,7 @@ services:
       depends_on:
         - postgresql-user
         - kafka
+        - keycloak
       ports:
         - "9447:9447"
       networks:
