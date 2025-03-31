@@ -205,6 +205,13 @@ public class AccountService {
         }
 
 
+        final String MASTER_ACCOUNT_NUMBER = "MASTER-0000000001";
+        Account masterAccount = accountRepository.findByAccountNumber(MASTER_ACCOUNT_NUMBER)
+                .orElseThrow(() -> new IllegalStateException("Master account not found"));
+
+        masterAccount.setBalance(masterAccount.getBalance().add(amount));
+        accountRepository.save(masterAccount);
+
         account.setBalance(account.getBalance().subtract(amount));
         accountRepository.save(account);
         recordCreditTransaction(creditContract, CreditTransactionType.CREDIT_REPAYMENT_AUTO, amount, repaymentRequest.getPaymentStatus());

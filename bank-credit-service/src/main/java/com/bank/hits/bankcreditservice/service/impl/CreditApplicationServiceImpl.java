@@ -259,6 +259,11 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
     }
 
     public boolean approveCredit(CreditApplicationRequestDTO request, CreditClientInfoResponseDTO clientInfo) {
+        BigDecimal masterAmount = clientInfo.getMasterAccountAmount();
+        if (masterAmount.compareTo(request.getAmount()) < 0) {
+            log.info("На счету банка недостаточно средств для выдачи кредита");
+            return false;
+        }
         if (hasOverdueCredits(clientInfo.getCredits())) {
             log.info("Клиент имеет просроченные кредиты");
             return false;

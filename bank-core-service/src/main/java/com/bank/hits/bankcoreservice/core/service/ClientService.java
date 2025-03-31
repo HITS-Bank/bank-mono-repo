@@ -1,6 +1,8 @@
 package com.bank.hits.bankcoreservice.core.service;
 
 import com.bank.hits.bankcoreservice.api.dto.*;
+import com.bank.hits.bankcoreservice.core.entity.Account;
+import com.bank.hits.bankcoreservice.core.repository.AccountRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,12 +12,14 @@ import com.bank.hits.bankcoreservice.core.mapper.ClientMapper;
 import com.bank.hits.bankcoreservice.core.repository.ClientRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ClientService {
+    private final AccountRepository accountRepository;
 
     private final ClientRepository clientRepository;
     private final AccountService accountService;
@@ -72,6 +76,8 @@ public class ClientService {
         clientInfoDto.setCreditTransactions(creditContractTransactionDtos);
 
         clientInfoDto.setCreditRating(client.getCreditRating());
+        Optional<Account> masterAcc = accountRepository.findByAccountNumber("MASTER-0000000001");
+        clientInfoDto.setMasterAccountAmount(masterAcc.get().getBalance());
         log.info("getClientInfoForCredit - {}", clientInfoDto);
 
         return clientInfoDto;
