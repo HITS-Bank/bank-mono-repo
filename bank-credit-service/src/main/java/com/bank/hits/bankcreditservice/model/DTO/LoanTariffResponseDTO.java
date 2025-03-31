@@ -13,6 +13,6 @@ import java.util.List;
 public class LoanTariffResponseDTO {
     @JsonProperty("loanTariffs")
     private List<CreditTariffDTO> loanTariffs;
-    @JsonProperty("pageInfo")
-    private PageInfoDTO pageInfo;
+    //@JsonProperty("pageInfo")
+    //private PageInfoDTO pageInfo;
 }

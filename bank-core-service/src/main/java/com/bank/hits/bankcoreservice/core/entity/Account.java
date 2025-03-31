@@ -1,5 +1,6 @@
 package com.bank.hits.bankcoreservice.core.entity;
 
+import com.bank.hits.bankcoreservice.api.dto.CurrencyCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -33,6 +34,10 @@ public class Account {
     @NaturalId
     @Column(unique = true, nullable = false)
     private String accountNumber;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "currency_code", nullable = false)
+    private CurrencyCode currencyCode;
     @ManyToOne
     @JoinColumn(name = "client_id", nullable = false)
     private Client client;
@@ -49,8 +54,9 @@ public class Account {
 
     private LocalDateTime createdDate = LocalDateTime.now();
 
-    public Account(final Client client, final String accountNumber) {
+    public Account(final Client client, final String accountNumber, final CurrencyCode currencyCode) {
         this.client = client;
         this.accountNumber = accountNumber;
+        this.currencyCode = currencyCode;
     }
 }

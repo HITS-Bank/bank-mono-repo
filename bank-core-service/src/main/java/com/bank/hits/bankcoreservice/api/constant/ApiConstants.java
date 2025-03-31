@@ -22,8 +22,8 @@ public class ApiConstants {
     public static final String CLIENT_INFO = "/{userId}/list"; // GET /accounts/{clientId}/info
 
     // Эндпоинты для работы с транзакциями
-    public static final String DEPOSIT = "/top_up"; // POST /accounts/deposit
-    public static final String WITHDRAW = "/withdraw"; // POST /accounts/withdraw
+    public static final String DEPOSIT = "/{accountId}/top_up"; // POST /accounts/deposit
+    public static final String WITHDRAW = "/{accountId}/withdraw"; // POST /accounts/withdraw
     public static final String ACCOUNT_HISTORY = "/operation_history"; // GET /accounts/{accountId}/history
 
 

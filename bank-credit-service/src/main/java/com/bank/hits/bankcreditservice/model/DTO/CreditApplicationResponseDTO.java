@@ -13,6 +13,7 @@ public class CreditApplicationResponseDTO {
     private BigDecimal amount;
     private int termInMonths;
     private String bankAccountNumber;
+    private UUID bankAccountId;
     private BigDecimal paymentAmount;
     private BigDecimal paymentSum;
     private LocalDateTime nextPaymentDateTime;
