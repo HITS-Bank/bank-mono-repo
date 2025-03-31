@@ -35,6 +35,7 @@ public class AccountEventConsumer {
 
     @KafkaListener(topics = "create.account", groupId = "bank.group")
     public void handleCreateAccount(final ConsumerRecord<String, UUID> record) {
+        /*
         log.info("Received create.account event: {}", record.value());
         try {
             final AccountDto createdAccount = accountService.openAccount(record.value());
@@ -42,6 +43,8 @@ public class AccountEventConsumer {
         } catch (Exception e) {
             log.error("Error processing create.account event: {}", e.getMessage(), e);
         }
+
+         */
     }
 
     @KafkaListener(topics = "close.account", groupId = "bank.group")

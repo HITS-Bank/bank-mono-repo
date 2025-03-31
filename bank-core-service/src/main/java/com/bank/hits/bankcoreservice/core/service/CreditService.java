@@ -33,6 +33,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class CreditService {
+    private final String MASTER_ACCOUNT_NUMBER = "MASTER-0000000001";
 
     private final CreditContractRepository creditContractRepository;
     private final CreditTransactionMapper creditTransactionMapper;
@@ -57,7 +58,7 @@ public class CreditService {
         final Client client = clientRepository.findByClientId(clientId)
                 .orElseThrow(() -> new RuntimeException("Client not found"));
         final List<CreditContract> creditContracts = creditContractRepository.findByClient(client);
-        return creditContractTransactionRepository.findByCreditContractIn(creditContracts).stream()
+        return creditContractTransactionRepository.findByCreditContractId(creditContracts).stream()
                 .sorted(Comparator.comparing(CreditTransaction::getPaymentDate, Comparator.nullsLast(Comparator.reverseOrder())).reversed())
                 .map(creditTransactionMapper::map)
                 .toList();
@@ -78,6 +79,18 @@ public class CreditService {
 
         final Account creditAccount = accountRepository.findByClientAndAccountType(client, AccountType.CREDIT)
                 .orElseGet(() -> createCreditAccount(client));
+
+        final String MASTER_ACCOUNT_NUMBER = "MASTER-0000000001";
+        Account masterAccount = accountRepository.findByAccountNumber(MASTER_ACCOUNT_NUMBER)
+                .orElseThrow(() -> new IllegalStateException("Master account not found"));
+
+        final BigDecimal approvedAmount = creditApprovedDto.getApprovedAmount();
+
+        if (masterAccount.getBalance().compareTo(approvedAmount) < 0) {
+            throw new IllegalStateException("Недостаточно средств на мастер-счете");
+        }
+        masterAccount.setBalance(masterAccount.getBalance().subtract(approvedAmount));
+        accountRepository.save(masterAccount);
 
         CreditContract creditContract = new CreditContract();
         creditContract.setCreditApprovedId(creditApprovedDto.getCreditId());

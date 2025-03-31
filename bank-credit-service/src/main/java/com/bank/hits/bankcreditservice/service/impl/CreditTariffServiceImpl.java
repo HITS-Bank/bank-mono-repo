@@ -73,7 +73,7 @@ public class CreditTariffServiceImpl implements CreditTariffService {
 
         // Формируем ответ
         PageInfoDTO pageInfo = new PageInfoDTO(pageSize, pageNumber);
-        return new LoanTariffResponseDTO(loanTariffs, pageInfo);
+        return new LoanTariffResponseDTO(loanTariffs);
     }
 
     private String mapSortingProperty(String property) {

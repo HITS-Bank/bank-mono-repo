@@ -9,8 +9,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(force = true)
 @AllArgsConstructor
 public class WithdrawRequest {
-    @JsonProperty("accountNumber")
-    private final String accountNumber;
     @JsonProperty("amount")
     private final String amount;
+
+    @JsonProperty("currencyCode")
+    private CurrencyCode currencyCode;
 }

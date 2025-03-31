@@ -1,10 +1,7 @@
 package com.bank.hits.bankcreditservice.service.impl;
 
 import com.bank.hits.bankcreditservice.model.CreditHistory;
-import com.bank.hits.bankcreditservice.model.DTO.CreditPaymentProcessingDTO;
-import com.bank.hits.bankcreditservice.model.DTO.CreditPaymentRequestDTO;
-import com.bank.hits.bankcreditservice.model.DTO.CreditPaymentResponseDTO;
-import com.bank.hits.bankcreditservice.model.DTO.CreditRepaymentRequest;
+import com.bank.hits.bankcreditservice.model.DTO.*;
 import com.bank.hits.bankcreditservice.repository.CreditHistoryRepository;
 import com.bank.hits.bankcreditservice.service.api.CreditPaymentService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -49,10 +46,10 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
 
     @Override
     @Transactional
-    public boolean processPayment(CreditPaymentRequestDTO request) throws Exception {
+    public boolean processPayment(CreditPaymentRequestDTO request, PaymentStatus paymentStatus) throws Exception {
         CreditHistory creditHistory = creditHistoryRepository.findByNumber(request.getLoanNumber())
                 .orElseThrow(() -> new RuntimeException("Кредит с таким номером не найден"));
-        String correlationId = sendPaymentRequest(creditHistory.getId(), request.getPaymentAmount());
+        String correlationId = sendPaymentRequest(creditHistory.getId(), request.getPaymentAmount(), paymentStatus);
         Semaphore semaphore = new Semaphore(0);
         semaphoreMap.put(correlationId, new SemaphoreResponsePair(semaphore, null));
         boolean acquired = semaphore.tryAcquire(30, TimeUnit.SECONDS);
@@ -75,7 +72,7 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
         }
     }
 
-    private String sendPaymentRequest(UUID creditId, BigDecimal amount) {
+    private String sendPaymentRequest(UUID creditId, BigDecimal amount, PaymentStatus paymentStatus) {
         log.info("pay started");
         String correlationId = UUID.randomUUID().toString();
         try {
@@ -83,7 +80,7 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
             paymentDTO.setCreditAmount(amount.toString());
             paymentDTO.setCreditContractId(creditId);
             paymentDTO.setEnrollmentDate(LocalDateTime.now());
-
+            paymentDTO.setPaymentStatus(paymentStatus);
             String message = objectMapper.writeValueAsString(paymentDTO);
             log.info("message при отправке оплаты: {}", message);
             ProducerRecord<String, String> record = new ProducerRecord<>(creditPaymentRequestTopic, message);
@@ -131,7 +128,7 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
                 request.setLoanNumber(credit.getNumber());
                 request.setPaymentAmount(credit.getMonthlyPayment());
 
-                boolean success = processPayment(request);
+                boolean success = processPayment(request, PaymentStatus.PLANNED);
 
                 if (success) {
                     log.info("Платёж для кредита {} успешно проведён", credit.getNumber());

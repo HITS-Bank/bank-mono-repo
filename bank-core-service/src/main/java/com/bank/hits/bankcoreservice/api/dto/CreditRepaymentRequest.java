@@ -18,4 +18,7 @@ public class CreditRepaymentRequest {
     private String creditAmount;
     @JsonProperty("enrollmentDate")
     private LocalDateTime enrollmentDate;
+
+    @JsonProperty("paymentStatus")
+    private PaymentStatus paymentStatus;
 }

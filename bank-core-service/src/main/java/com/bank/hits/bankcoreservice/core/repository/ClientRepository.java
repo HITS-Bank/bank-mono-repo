@@ -13,7 +13,7 @@ import java.util.UUID;
 
 public interface ClientRepository extends JpaRepository<Client, UUID> {
     @Transactional
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    //@Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Client> findByClientId(UUID clientId);
 
     @Query(value = "INSERT INTO client (client_id, is_blocked) VALUES (:clientId, false) ON CONFLICT (client_id) DO NOTHING RETURNING *", nativeQuery = true)

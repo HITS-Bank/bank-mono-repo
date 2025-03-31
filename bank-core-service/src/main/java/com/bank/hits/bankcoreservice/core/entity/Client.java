@@ -35,6 +35,9 @@ public class Client {
         this.isBlocked = false;
     }
 
+    @Column(name = "credit_rating")
+    private int creditRating = 10;
+
     public Client(final boolean isBlocked) {
         this.isBlocked = isBlocked;
     }

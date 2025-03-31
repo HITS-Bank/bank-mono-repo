@@ -50,8 +50,8 @@ public class CreditTariffController {
         return ResponseEntity.ok(dto);
     }
 
-    @DeleteMapping("/employee/loan/tariffs/delete")
-    public ResponseEntity<?> DeleteTariff(@RequestBody DeleteTariffDTO dto,
+    @DeleteMapping("/employee/loan/tariffs/{tariffId}/delete")
+    public ResponseEntity<?> DeleteTariff(@PathVariable String tariffId,
                                           @RequestHeader("userId") String employeeUuid) throws Exception {
         log.info("Запрос на удаление тарифа от пользователя {}", employeeUuid);
         if (employeeUuid == null) {
@@ -63,7 +63,7 @@ public class CreditTariffController {
             throw new ForbiddenAccessException("Employee is blocked");
         }
 
-        boolean updated = creditTariffService.markTariffAsInactive(dto.getTariffId());
+        boolean updated = creditTariffService.markTariffAsInactive(UUID.fromString(tariffId));
         if (!updated) {
             throw new NoSuchElementException("Тариф не найден");
         }
