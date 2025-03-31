@@ -37,7 +37,7 @@ paths:
   /users/profile:
     get:
       tags:
-        - Profile
+        - Users
       security:
         - bearerAuth: []
       responses:
@@ -54,7 +54,7 @@ paths:
   /users/employee/users/{userId}/ban:
     post:
       tags:
-        - Profile
+        - Users
       description: Запрос доступен только сотрудникам (если сотрудник не заблокирован)
       security:
         - bearerAuth: []
@@ -79,7 +79,7 @@ paths:
   /users/employee/users/{userId}/unban:
     post:
       tags:
-        - Profile
+        - Users
       description: Запрос доступен только сотрудникам (если сотрудник не заблокирован)
       security:
         - bearerAuth: []
@@ -104,7 +104,7 @@ paths:
   /users/employee/users/list:
     get:
       tags:
-        - Profile
+        - Users
       description: Запрос доступен только сотрудникам (если сотрудник не заблокирован)
       security:
         - bearerAuth: []
