@@ -9,14 +9,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/users/profile") // TODO убрать слово profile
+@RequestMapping("/users")
 @RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
     private final JwtUtils jwtUtils;
 
-    @GetMapping
+    @GetMapping("/profile")
     public ResponseEntity<UserDto> getSelfProfile(
             HttpServletRequest httpServletRequest
     ) {

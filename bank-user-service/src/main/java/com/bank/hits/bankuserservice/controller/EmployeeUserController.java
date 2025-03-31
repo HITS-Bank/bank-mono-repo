@@ -12,29 +12,19 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/users/employee/profile") // TODO убрать слово profile
+@RequestMapping("/users/employee/users")
 @RequiredArgsConstructor
 public class EmployeeUserController {
 
     private final UserService userService;
     private final JwtUtils jwtUtils;
 
-    @GetMapping
-    public ResponseEntity<UserDto> getSelfProfile(
-            HttpServletRequest httpServletRequest
-    ) {
-        String token = jwtUtils.extractAccessToken(httpServletRequest);
-        return ResponseEntity.ok(userService.getSelfUserProfile(token));
-    }
-
     @PostMapping("/register")
-//    @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<Void> registerUser(
             @Valid @RequestBody RegisterRequest request,
             HttpServletRequest httpServletRequest
@@ -45,7 +35,6 @@ public class EmployeeUserController {
     }
 
     @PostMapping("/{userId}/ban")
-//    @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<Void> banUser(
             @PathVariable("userId") String userId,
             HttpServletRequest httpServletRequest
@@ -56,7 +45,6 @@ public class EmployeeUserController {
     }
 
     @PostMapping("/{userId}/unban")
-//    @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<Void> unbanUser(
             @PathVariable("userId") String userId,
             HttpServletRequest httpServletRequest
@@ -67,7 +55,6 @@ public class EmployeeUserController {
     }
 
     @GetMapping("/list")
-//    @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<List<UserDto>> getUserList(
             @RequestParam Role role,
             @RequestParam(required = false) String nameQuery,
