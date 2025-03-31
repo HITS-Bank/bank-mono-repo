@@ -1,4 +1,4 @@
-package com.bank.hits.bankuserservice.user_service.service;
+package com.bank.hits.bankuserservice.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

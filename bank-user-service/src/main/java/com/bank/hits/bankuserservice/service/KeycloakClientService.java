@@ -1,10 +1,11 @@
-package com.bank.hits.bankuserservice.user_service.service;
+package com.bank.hits.bankuserservice.service;
 
-import com.bank.hits.bankuserservice.user_service.model.ClientConfig;
+import com.bank.hits.bankuserservice.model.entity.ClientConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -17,15 +18,19 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class KeycloakClientService {
 
+    private final KeycloakAuthService keycloakAuthService;
+    private final KeycloakUrlProvider keycloakUrlProvider;
+
     private final String configFilePath = "src/main/resources/client-config.json";
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
+    @Value("${keycloak.bank-client-id}")
+    private String keycloakBankClientId;
+
     public String getClientUUID() throws IOException {
-        log.info("entered getClientUUID");
         ClientConfig config = loadClientConfig();
         if (config.getClientUUID() != null) {
-            log.info("ОГО!!!!!! getClientUUID НЕ НУЛЛ!!");
             return config.getClientUUID();
         }
 
@@ -35,24 +40,23 @@ public class KeycloakClientService {
     }
 
     private ClientConfig loadClientConfig() throws IOException {
-        log.info("Зашли в loadClientConfig");
         File file = new File(configFilePath);
         if (file.exists()) {
-            log.info("файл с конфигом уже есть");
             return objectMapper.readValue(file, ClientConfig.class);
         }
+
         return new ClientConfig();
     }
 
     private void saveClientConfig(String UUID) throws IOException {
-        log.info("зашли в saveClientConfig с UUID " + UUID);
         ClientConfig config = new ClientConfig();
         config.setClientUUID(UUID);
+
         File file = new File(configFilePath);
         file.getParentFile().mkdirs();
         file.createNewFile();
+
         if (!file.exists()) {
-            log.info("файла не существует лох");
             file.getParentFile().mkdirs();
             file.createNewFile();
         }
@@ -61,11 +65,8 @@ public class KeycloakClientService {
     }
 
     private String fetchClientUUIDFromKeycloak() {
-        // TODO тут и в других местах поменять на использование KeycloakAuthService::getAdminToken
-        log.info("зашли в fetchClientUUIDFromKeycloak");
-        String token = getAdminToken();
-        String url = "http://keycloak:8080/admin/realms/bank/clients?client_id=bank-rest-api";
-        log.info("получили токен админа " + token);
+        String token = keycloakAuthService.getAdminToken();
+        String url = keycloakUrlProvider.getClientsBaseUrl() + "?client_id=" + keycloakBankClientId;
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
@@ -74,16 +75,14 @@ public class KeycloakClientService {
         ResponseEntity<ClientResponse[]> response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, ClientResponse[].class);
 
         if (response.getStatusCode() == HttpStatus.OK) {
-            log.info("СТАТУС ОТВЕТА ОК!!! РЕАЛЬНО???");
             ClientResponse[] clients = response.getBody();
             if (clients != null) {
                 for (ClientResponse client : clients) {
-                    if ("bank-rest-api".equals(client.getClientId())) {
-                        log.info("Нашли client-id для bank-rest-api " + client.getId());
+                    if (keycloakBankClientId.equals(client.getClientId())) {
                         return client.getId();
                     }
                 }
-                throw new RuntimeException("Client with clientId 'bank-rest-api' not found");
+                throw new RuntimeException("Client with specified clientId not found");
             } else {
                 throw new RuntimeException("No clients found");
             }
@@ -91,32 +90,9 @@ public class KeycloakClientService {
             throw new RuntimeException("Failed to fetch clients");
         }
     }
-
-    private String getAdminToken() {
-        log.info("зашли в getAdminToken");
-        String url = "http://keycloak:8080/realms/master/protocol/openid-connect/token";
-        String body = "grant_type=password&username=admin&password=admin&client_id=admin-cli";
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        HttpEntity<String> request = new HttpEntity<>(body, headers);
-        ResponseEntity<TokenResponse> response = restTemplate.postForEntity(url, request, TokenResponse.class);
-
-        if (response.getStatusCode() == HttpStatus.OK) {
-            return response.getBody().getAccess_token();
-        } else {
-            throw new RuntimeException("Failed to obtain admin token");
-        }
-    }
-
     @Getter
     private static class ClientResponse {
         private String id;
         private String clientId;
-    }
-
-    @Getter
-    private static class TokenResponse {
-        private String access_token;
     }
 }

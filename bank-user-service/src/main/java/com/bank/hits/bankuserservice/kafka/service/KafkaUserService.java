@@ -15,7 +15,7 @@ import java.text.MessageFormat;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class KafkaProfileService {
+public class KafkaUserService {
 
     private final String BAN_ACTION_TOPIC_PART = "ban";
     private final String UNBAN_ACTION_TOPIC_PART = "unban";

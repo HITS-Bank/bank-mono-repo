@@ -1,4 +1,4 @@
-package com.bank.hits.bankuserservice.auth_service;
+package com.bank.hits.bankuserservice.common.config;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;

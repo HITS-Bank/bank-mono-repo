@@ -1,4 +1,4 @@
-package com.bank.hits.bankuserservice.profile.dto;
+package com.bank.hits.bankuserservice.model.dto;
 
 import com.bank.hits.bankuserservice.common.enums.Role;
 import jakarta.validation.constraints.Positive;

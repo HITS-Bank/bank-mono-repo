@@ -1,7 +1,7 @@
 package com.bank.hits.bankuserservice.kafka.service;
 
-import com.bank.hits.bankuserservice.user_service.service.KeycloakAuthService;
-import com.bank.hits.bankuserservice.user_service.service.UserService;
+import com.bank.hits.bankuserservice.service.KeycloakAuthService;
+import com.bank.hits.bankuserservice.service.UserService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +10,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
-import com.bank.hits.bankuserservice.common.dto.UserDto;
+import com.bank.hits.bankuserservice.model.dto.UserDto;
 import com.bank.hits.bankuserservice.kafka.message.InformationAboutBlockingDTO;
 
 @Slf4j
@@ -22,7 +22,7 @@ public class KafkaListenerService {
     private final KeycloakAuthService keycloakAuthService;
 
     private final ObjectMapper objectMapper;
-    private final KafkaProfileService kafkaProfileService;
+    private final KafkaUserService kafkaUserService;
 
     @KafkaListener(topics = "credit.user.info.request", groupId = "user-service-group")
     public void listenCreditUserInfoRequest(ConsumerRecord<String, String> record) throws JsonProcessingException {
@@ -49,6 +49,6 @@ public class KafkaListenerService {
         UserDto profile = userService.getUserProfile(adminToken, response);
 
         InformationAboutBlockingDTO answer = new InformationAboutBlockingDTO(profile.getIsBlocked());
-        kafkaProfileService.sendUserBanned(correlationId, answer);
+        kafkaUserService.sendUserBanned(correlationId, answer);
     }
 }

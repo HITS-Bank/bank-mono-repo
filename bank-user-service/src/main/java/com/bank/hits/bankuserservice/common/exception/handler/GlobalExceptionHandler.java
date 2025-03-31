@@ -1,10 +1,10 @@
 package com.bank.hits.bankuserservice.common.exception.handler;
 
+import com.bank.hits.bankuserservice.common.exception.ForbiddenActionException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import com.bank.hits.bankuserservice.common.exception.*;
 
 import java.time.LocalDateTime;
 import java.util.Map;

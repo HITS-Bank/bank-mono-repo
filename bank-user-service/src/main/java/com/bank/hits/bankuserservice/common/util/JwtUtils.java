@@ -1,11 +1,10 @@
 package com.bank.hits.bankuserservice.common.util;
 
-import com.bank.hits.bankuserservice.user_service.service.KeycloakClientService;
+import com.bank.hits.bankuserservice.service.KeycloakClientService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component

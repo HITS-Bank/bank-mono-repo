@@ -1,11 +1,11 @@
-package com.bank.hits.bankuserservice.user_service.repository;
+package com.bank.hits.bankuserservice.repository;
 
-import com.bank.hits.bankuserservice.auth.dto.RegisterRequest;
+import com.bank.hits.bankuserservice.model.dto.RegisterRequest;
 import com.bank.hits.bankuserservice.common.model.KeycloakRoleResponse;
 import com.bank.hits.bankuserservice.common.model.KeycloakUserResponse;
-import com.bank.hits.bankuserservice.user_service.service.KeycloakAuthService;
-import com.bank.hits.bankuserservice.user_service.service.KeycloakClientService;
-import com.bank.hits.bankuserservice.user_service.service.KeycloakUrlProvider;
+import com.bank.hits.bankuserservice.service.KeycloakAuthService;
+import com.bank.hits.bankuserservice.service.KeycloakClientService;
+import com.bank.hits.bankuserservice.service.KeycloakUrlProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;

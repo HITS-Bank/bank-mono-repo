@@ -1,4 +1,4 @@
-package com.bank.hits.bankuserservice.user_service.model;
+package com.bank.hits.bankuserservice.model.entity;
 
 import lombok.Data;
 

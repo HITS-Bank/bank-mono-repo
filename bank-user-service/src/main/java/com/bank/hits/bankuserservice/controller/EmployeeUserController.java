@@ -1,11 +1,11 @@
-package com.bank.hits.bankuserservice.user_service.controller;
+package com.bank.hits.bankuserservice.controller;
 
-import com.bank.hits.bankuserservice.auth.dto.RegisterRequest;
-import com.bank.hits.bankuserservice.common.dto.UserDto;
+import com.bank.hits.bankuserservice.model.dto.RegisterRequest;
+import com.bank.hits.bankuserservice.model.dto.UserDto;
 import com.bank.hits.bankuserservice.common.enums.Role;
 import com.bank.hits.bankuserservice.common.util.JwtUtils;
-import com.bank.hits.bankuserservice.profile.dto.UserListRequest;
-import com.bank.hits.bankuserservice.user_service.service.UserService;
+import com.bank.hits.bankuserservice.model.dto.UserListRequest;
+import com.bank.hits.bankuserservice.service.UserService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -18,11 +18,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/users/profile")
+@RequestMapping("/users/employee/profile") // TODO убрать слово profile
 @RequiredArgsConstructor
-public class ProfileController {
-
-    // TODO переименовать в UserController, изменить пути
+public class EmployeeUserController {
 
     private final UserService userService;
     private final JwtUtils jwtUtils;
@@ -36,7 +34,7 @@ public class ProfileController {
     }
 
     @PostMapping("/register")
-    @PreAuthorize("hasRole('EMPLOYEE')")
+//    @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<Void> registerUser(
             @Valid @RequestBody RegisterRequest request,
             HttpServletRequest httpServletRequest
@@ -47,7 +45,7 @@ public class ProfileController {
     }
 
     @PostMapping("/{userId}/ban")
-    @PreAuthorize("hasRole('EMPLOYEE')")
+//    @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<Void> banUser(
             @PathVariable("userId") String userId,
             HttpServletRequest httpServletRequest
@@ -58,7 +56,7 @@ public class ProfileController {
     }
 
     @PostMapping("/{userId}/unban")
-    @PreAuthorize("hasRole('EMPLOYEE')")
+//    @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<Void> unbanUser(
             @PathVariable("userId") String userId,
             HttpServletRequest httpServletRequest
@@ -69,7 +67,7 @@ public class ProfileController {
     }
 
     @GetMapping("/list")
-    @PreAuthorize("hasRole('EMPLOYEE')")
+//    @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<List<UserDto>> getUserList(
             @RequestParam Role role,
             @RequestParam(required = false) String nameQuery,

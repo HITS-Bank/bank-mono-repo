@@ -1,4 +1,4 @@
-package com.bank.hits.bankuserservice.common.dto;
+package com.bank.hits.bankuserservice.model.dto;
 
 import com.bank.hits.bankuserservice.common.enums.Role;
 import lombok.Data;

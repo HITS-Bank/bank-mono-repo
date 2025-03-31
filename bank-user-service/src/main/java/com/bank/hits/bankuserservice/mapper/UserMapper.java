@@ -1,6 +1,6 @@
-package com.bank.hits.bankuserservice.user_service.mapper;
+package com.bank.hits.bankuserservice.mapper;
 
-import com.bank.hits.bankuserservice.common.dto.UserDto;
+import com.bank.hits.bankuserservice.model.dto.UserDto;
 import com.bank.hits.bankuserservice.common.enums.Role;
 import com.bank.hits.bankuserservice.common.model.KeycloakUserResponse;
 import org.springframework.stereotype.Component;

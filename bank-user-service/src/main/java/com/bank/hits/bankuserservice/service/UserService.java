@@ -1,15 +1,15 @@
-package com.bank.hits.bankuserservice.user_service.service;
+package com.bank.hits.bankuserservice.service;
 
-import com.bank.hits.bankuserservice.auth.dto.RegisterRequest;
-import com.bank.hits.bankuserservice.common.dto.UserDto;
+import com.bank.hits.bankuserservice.model.dto.RegisterRequest;
+import com.bank.hits.bankuserservice.model.dto.UserDto;
 import com.bank.hits.bankuserservice.common.enums.Role;
 import com.bank.hits.bankuserservice.common.exception.ForbiddenActionException;
 import com.bank.hits.bankuserservice.common.model.KeycloakRoleResponse;
 import com.bank.hits.bankuserservice.common.model.KeycloakUserResponse;
-import com.bank.hits.bankuserservice.kafka.service.KafkaProfileService;
-import com.bank.hits.bankuserservice.profile.dto.UserListRequest;
-import com.bank.hits.bankuserservice.user_service.mapper.UserMapper;
-import com.bank.hits.bankuserservice.user_service.repository.KeycloakRepository;
+import com.bank.hits.bankuserservice.kafka.service.KafkaUserService;
+import com.bank.hits.bankuserservice.model.dto.UserListRequest;
+import com.bank.hits.bankuserservice.mapper.UserMapper;
+import com.bank.hits.bankuserservice.repository.KeycloakRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserMapper userMapper;
-    private final KafkaProfileService kafkaProfileService;
+    private final KafkaUserService kafkaUserService;
 
     private final KeycloakRepository keycloakRepository;
 
@@ -76,7 +76,7 @@ public class UserService {
                 Collections.singletonMap("isBanned", Collections.singletonList("true"))
         );
 
-        kafkaProfileService.coreSendUserBanned(userId);
+        kafkaUserService.coreSendUserBanned(userId);
     }
 
     public void unbanUser(String token, String userId) throws JsonProcessingException {
@@ -90,7 +90,7 @@ public class UserService {
                 Collections.singletonMap("isBanned", Collections.singletonList("false"))
         );
 
-        kafkaProfileService.coreSendUserUnbanned(userId);
+        kafkaUserService.coreSendUserUnbanned(userId);
     }
 
     public void registerUser(String token, RegisterRequest request) {

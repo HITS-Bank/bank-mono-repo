@@ -1,4 +1,4 @@
-package com.bank.hits.bankuserservice.user_service.service;
+package com.bank.hits.bankuserservice.service;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
