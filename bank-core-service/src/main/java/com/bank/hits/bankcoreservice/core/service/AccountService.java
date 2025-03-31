@@ -1,5 +1,7 @@
 package com.bank.hits.bankcoreservice.core.service;
 
+import com.bank.hits.bankcoreservice.api.enums.AccountType;
+import com.bank.hits.bankcoreservice.config.websocket.TransactionWebSocketController;
 import com.bank.hits.bankcoreservice.core.entity.*;
 import com.bank.hits.bankcoreservice.core.repository.*;
 import jakarta.persistence.EntityNotFoundException;
@@ -45,6 +47,8 @@ public class AccountService {
     @Autowired
     private CurrencyConversionService conversionService;
 
+    @Autowired
+    private TransactionWebSocketController transactionWebSocketController;
 
     @Transactional
     public AccountDto openAccount(final UUID clientId, final CurrencyCode currencyCode) {
@@ -53,6 +57,7 @@ public class AccountService {
                 .orElseGet(() -> clientRepository.save(new Client(clientId)));
         Account account = new Account(client, generatedAccountNumber, currencyCode);
         account.setBalance(BigDecimal.ZERO);
+        account.setAccountType(AccountType.CHECKING);
         account = accountRepository.save(account);
         return accountMapper.map(account);
     }
@@ -65,7 +70,7 @@ public class AccountService {
     }
 
     public AccountDto deposit(final TopUpRequest request, String accountId) {
-        final Account account = accountRepository.findByAccountId(accountId)
+        final Account account = accountRepository.findById(UUID.fromString(accountId))
                 .orElseThrow(() -> new EntityNotFoundException("Account not found"));
         if (account.isClosed()) {
             throw new EntityNotFoundException("Account is closed");
@@ -92,12 +97,14 @@ public class AccountService {
             throw new EntityNotFoundException("Insufficient funds");
         }
         accountRepository.save(account);
-        recordAccountTransaction(account, OperationType.TOP_UP, amount);
+        final var accountTransactionDto = recordAccountTransaction(account, OperationType.TOP_UP, amount);
+
+        transactionWebSocketController.sendTransactionUpdate(UUID.fromString(accountId), accountTransactionDto);
         return accountMapper.map(account);
     }
 
     public AccountDto withdraw(final WithdrawRequest request, final String accountId) {
-        final Account account = accountRepository.findByAccountId(accountId)
+        final Account account = accountRepository.findById(UUID.fromString(accountId))
                 .orElseThrow(() -> new EntityNotFoundException("Account not found"));
         if (account.isClosed()) {
             throw new EntityNotFoundException("Account is closed");
@@ -126,7 +133,10 @@ public class AccountService {
             throw new EntityNotFoundException("Insufficient funds");
         }
         accountRepository.save(account);
-        recordAccountTransaction(account, OperationType.WITHDRAW, amount);
+        final var accountTransactionDto = recordAccountTransaction(account, OperationType.WITHDRAW, amount);
+
+        transactionWebSocketController.sendTransactionUpdate(UUID.fromString(accountId), accountTransactionDto);
+
         return accountMapper.map(account);
     }
 
@@ -226,7 +236,7 @@ public class AccountService {
         return new CreditPaymentResponseDTO(true, account.getBalance().toString());
     }
 
-    private void recordAccountTransaction(final Account account, final OperationType type, final BigDecimal amount) {
+    private AccountTransactionDto recordAccountTransaction(final Account account, final OperationType type, final BigDecimal amount) {
         final AccountTransaction tx = new AccountTransaction();
 
         tx.setAccount(account);
@@ -235,6 +245,8 @@ public class AccountService {
         tx.setTransactionDate(LocalDateTime.now());
 
         accountTransactionRepository.save(tx);
+
+        return accountTransactionMapper.map(tx);
     }
 
     private void recordCreditTransaction(final CreditContract creditContract, final CreditTransactionType type, final BigDecimal amount, final PaymentStatus paymentStatus) {
@@ -395,7 +407,9 @@ public class AccountService {
     public List<PaymentResponseDTO> getPayments(UUID loanId)
     {
         List<PaymentResponseDTO> result = new ArrayList<>();
-        List<CreditTransaction> successfulPayments = creditTransactionRepository.findByCreditContractId(loanId);
+        CreditContract creditContract = creditContractRepository.findById(loanId)
+                .orElseThrow(() -> new RuntimeException("Credit contract not found"));
+        List<CreditTransaction> successfulPayments = creditTransactionRepository.findByCreditContract(creditContract);
         for (CreditTransaction tx : successfulPayments) {
             PaymentResponseDTO dto = new PaymentResponseDTO();
             dto.setId(tx.getTransactionId());

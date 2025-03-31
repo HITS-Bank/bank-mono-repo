@@ -58,7 +58,7 @@ public class CreditService {
         final Client client = clientRepository.findByClientId(clientId)
                 .orElseThrow(() -> new RuntimeException("Client not found"));
         final List<CreditContract> creditContracts = creditContractRepository.findByClient(client);
-        return creditContractTransactionRepository.findByCreditContractId(creditContracts).stream()
+        return creditContractTransactionRepository.findByCreditContractIn(creditContracts).stream()
                 .sorted(Comparator.comparing(CreditTransaction::getPaymentDate, Comparator.nullsLast(Comparator.reverseOrder())).reversed())
                 .map(creditTransactionMapper::map)
                 .toList();
