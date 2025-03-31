@@ -4,67 +4,17 @@ info:
   description: |-
   version: '1.0'
 tags:
-  - name: Auth
-    description: Работа с аутентификацией/авторизацией (Deprecated, тут будет SSO)
-  - name: Profile
-    description: Работа с профилями пользователей
+  - name: Users
+    description: Работа с пользователями
   - name: Bank Account
     description: Работа со счетами
   - name: Loan
     description: Работа с кредитами
 paths:
-  /auth/login:
+  /users/employee/users/register:
     post:
       tags:
-        - Auth
-      parameters:
-        - name: channel
-          in: query
-          required: true
-          schema:
-            $ref: '#/components/schemas/Channel'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginCredentials'
-      responses:
-        '200':
-          description: Авторизация успешно завершена
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TokenResponse'
-        '400':
-          description: Bad Request
-        '500':
-          description: Internal server error
-  /auth/refresh:
-    post:
-      tags:
-        - Auth
-      security:
-        - bearerAuth: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RefreshRequest'
-      responses:
-        '200':
-          description: Токены обновлены
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TokenResponse'
-        '401':
-          description: Refresh token is invalid or expired
-        '500':
-          description: Internal server error
-  /employee/auth/register:
-    post:
-      tags:
-        - Auth
+        - Users
       description: Запрос доступен только сотрудникам (если сотрудник не заблокирован)
       security:
         - bearerAuth: []
@@ -84,7 +34,7 @@ paths:
           description: Forbidden; возвращается, когда вызывающий - клиент или заблокированный сотрудник
         '500':
           description: Internal server error
-  /profile:
+  /users/profile:
     get:
       tags:
         - Profile
@@ -101,7 +51,7 @@ paths:
           description: Unauthorized
         '500':
           description: Internal server error
-  /employee/profile/{userId}/ban:
+  /users/employee/users/{userId}/ban:
     post:
       tags:
         - Profile
@@ -126,7 +76,7 @@ paths:
           description: Forbidden; возвращается, когда вызывающий - клиент или заблокированный сотрудник
         '500':
           description: Internal server error
-  /employee/profile/{userId}/unban:
+  /users/employee/users/{userId}/unban:
     post:
       tags:
         - Profile
@@ -151,7 +101,7 @@ paths:
           description: Forbidden; возвращается, когда вызывающий - клиент или заблокированный сотрудник
         '500':
           description: Internal server error
-  /employee/profile/list:
+  /users/employee/users/list:
     get:
       tags:
         - Profile
