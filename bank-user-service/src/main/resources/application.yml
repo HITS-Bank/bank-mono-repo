@@ -49,7 +49,8 @@ keycloak:
   realm-name: bank
   bank-client-id: bank-rest-api
   admin-client-id: admin-service
-  admin-client-secret: CsKlETJ2ZFKFYd2ipsgwHjHAD57alKn2
+  admin-client-secret: ooenBUduUqgYtZTvmxNnMfx2ZvCWuQM9
+  mobile-app-host-uri: http://10.0.2.2:8080
 
 server:
   port: ${APP_PORT:9447}
