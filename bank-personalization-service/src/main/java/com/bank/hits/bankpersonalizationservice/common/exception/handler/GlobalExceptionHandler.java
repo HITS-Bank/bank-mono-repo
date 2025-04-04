@@ -1,6 +1,6 @@
-package com.bank.hits.bankuserservice.common.exception.handler;
+package com.bank.hits.bankpersonalizationservice.common.exception.handler;
 
-import com.bank.hits.bankuserservice.common.exception.ForbiddenActionException;
+import com.bank.hits.bankpersonalizationservice.common.exception.ForbiddenActionException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;

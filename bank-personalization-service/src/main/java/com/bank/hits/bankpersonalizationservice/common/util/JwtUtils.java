@@ -1,7 +1,5 @@
-package com.bank.hits.bankuserservice.common.util;
+package com.bank.hits.bankpersonalizationservice.common.util;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -16,13 +14,5 @@ public class JwtUtils {
         } catch (Exception e) {
             throw new IllegalArgumentException("invalid token");
         }
-    }
-
-    private Claims extractAllClaims(String token, String signingKey) {
-        return Jwts.parserBuilder()
-                .setSigningKey(signingKey)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
     }
 }

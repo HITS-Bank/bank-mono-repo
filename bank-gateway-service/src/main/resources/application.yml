@@ -14,6 +14,10 @@ spring:
           uri: http://user-app:9447
           predicates:
             - Path=/users/**
+        - id: bank-personalization-service
+          uri: http://personalization-app:9448
+          predicates:
+            - Path=/personalization/**
 springdoc:
   api-docs:
     path: /api-docs

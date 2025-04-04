@@ -46,6 +46,21 @@ services:
       networks:
         - network-local
 
+    postgresql-personalization:
+      image: postgres:15.7
+      container_name: postgresql-personalization
+      command: postgres -c 'max_connections=200'
+      environment:
+        POSTGRES_DB: personalization_db
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: 12345
+      ports:
+        - "5436:5432"
+      volumes:
+        - postgres-personalization:/var/lib/postgresql/data
+      networks:
+        - network-local
+
 
     redis:
       image: redis:latest
@@ -236,12 +251,35 @@ services:
         SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
         APP_PORT: 9447
 
+    personalization-app:
+      container_name: personalization-app
+      build:
+        context: .
+        dockerfile: ./Dockerfile
+        args:
+          JAR_FILE: "bank-personalization-service/build/libs/bank-personalization-service-0.0.1-SNAPSHOT.jar"
+          APP_PORT: 9448
+      depends_on:
+        - postgresql-personalization
+        - keycloak
+      ports:
+        - "9448:9448"
+      networks:
+        - network-local
+      environment:
+        USER_DATABASE_URL: jdbc:postgresql://postgresql-personalization:5432/personalization_db
+        SPRING_DATASOURCE_USERNAME: postgres
+        SPRING_DATASOURCE_PASSWORD: 12345
+        APP_PORT: 9448
+
 volumes:
     postgres-core:
       driver: local
     postgres-credit:
       driver: local
     postgres-user:
+      driver: local
+    postgres-personalization:
       driver: local
     kafka_data:
       driver: local

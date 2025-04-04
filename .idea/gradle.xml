@@ -12,6 +12,7 @@
             <option value="$PROJECT_DIR$/bank-core-service" />
             <option value="$PROJECT_DIR$/bank-credit-service" />
             <option value="$PROJECT_DIR$/bank-gateway-service" />
+            <option value="$PROJECT_DIR$/bank-personalization-service" />
             <option value="$PROJECT_DIR$/bank-user-service" />
           </set>
         </option>
