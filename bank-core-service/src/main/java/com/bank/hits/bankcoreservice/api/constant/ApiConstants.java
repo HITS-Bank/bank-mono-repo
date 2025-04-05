@@ -32,4 +32,5 @@ public class ApiConstants {
 
     public static final String TRANSFER = "/transfer";
     public static final String TRANSFER_INFO = "/transferInfo";
+    public static final String LOAN_PAYMENTS = "/loan/{loanId}/payments";
 }

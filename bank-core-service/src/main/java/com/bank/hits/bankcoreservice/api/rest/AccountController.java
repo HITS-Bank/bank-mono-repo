@@ -3,6 +3,8 @@ package com.bank.hits.bankcoreservice.api.rest;
 import com.bank.hits.bankcoreservice.api.constant.ApiConstants;
 
 import com.bank.hits.bankcoreservice.api.dto.*;
+import com.bank.hits.bankcoreservice.config.JwtUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -27,8 +29,12 @@ public class AccountController {
 
     private final AccountService accountService;
 
+    private final JwtUtils jwtUtils;
+
     @PostMapping(value = ApiConstants.CREATE_ACCOUNT, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AccountDto> createAccount(@RequestHeader("userId") final UUID clientId, @RequestParam CurrencyCode currencyCode) {
+    public ResponseEntity<AccountDto> createAccount(@RequestParam CurrencyCode currencyCode,
+                                                    HttpServletRequest httpServletRequest) {
+        final UUID clientId = UUID.fromString(jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest)));
         return ResponseEntity.ok(accountService.openAccount(clientId, currencyCode));
     }
 
@@ -44,24 +50,26 @@ public class AccountController {
     }
 
     @GetMapping(value = ApiConstants.GET_ACCOUNTS, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<AccountDto>> getAccounts(@RequestHeader("userId") final UUID userId,
+    public ResponseEntity<List<AccountDto>> getAccounts(HttpServletRequest httpServletRequest,
                                                                   @RequestParam final int pageSize,
                                                                   @RequestParam final int pageNumber) {
+        final UUID userId = UUID.fromString(jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest)));
         return ResponseEntity.ok(accountService.getAllClientAccounts(userId, pageSize, pageNumber - 1));
     }
 
     @PostMapping(value = ApiConstants.TOP_UP, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AccountDto> top_up(@RequestHeader("userId") UUID clientId,
+    public ResponseEntity<AccountDto> top_up(HttpServletRequest httpServletRequest,
                                              @RequestParam final UUID accountId,
                                              @RequestBody final ChangeBankAccountBalanceRequest changeBankAccountBalanceRequest) {
+        final UUID clientId = UUID.fromString(jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest)));
         return ResponseEntity.ok(accountService.top_up(clientId, accountId, changeBankAccountBalanceRequest));
     }
 
-
     @PostMapping(value = ApiConstants.WITHDRAW, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AccountDto> withdraw(@RequestHeader("userId") UUID clientId,
+    public ResponseEntity<AccountDto> withdraw(HttpServletRequest httpServletRequest,
                                                @RequestParam final UUID accountId,
                                                @RequestBody final ChangeBankAccountBalanceRequest changeBankAccountBalanceRequest) {
+        final UUID clientId = UUID.fromString(jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest)));
         return ResponseEntity.ok(accountService.withdraw(clientId, accountId, changeBankAccountBalanceRequest));
     }
 
@@ -73,18 +81,20 @@ public class AccountController {
     }
 
     @PostMapping(value = ApiConstants.TRANSFER, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AccountDto> transferMoneyBetweenAccounts(final @RequestHeader("userId") UUID clientId,
+    public ResponseEntity<AccountDto> transferMoneyBetweenAccounts(HttpServletRequest httpServletRequest,
                                                                    final @RequestBody TransferRequest request) {
+        final UUID clientId = UUID.fromString(jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest)));
         return ResponseEntity.ok(accountService.transferMoneyBetweenAccounts(clientId, request));
     }
 
     @PostMapping(value = ApiConstants.TRANSFER_INFO, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<TransferInfo> getTransferInfo(final @RequestHeader("userId") UUID clientId,
+    public ResponseEntity<TransferInfo> getTransferInfo(HttpServletRequest httpServletRequest,
                                                         final @RequestBody TransferRequest request) {
+        final UUID clientId = UUID.fromString(jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest)));
         return ResponseEntity.ok(accountService.getTransferInfo(clientId, request));
     }
 
-    @GetMapping("/loan/{loanId}/payments")
+    @GetMapping(value = ApiConstants.LOAN_PAYMENTS, produces = MediaType.APPLICATION_JSON_VALUE)
     public List<PaymentResponseDTO> getPayments(@PathVariable("loanId") UUID loanId) {
         return ResponseEntity.ok(accountService.getPayments(loanId)).getBody();
     }

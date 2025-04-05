@@ -1,10 +1,12 @@
 package com.bank.hits.bankcreditservice.controller;
 
+import com.bank.hits.bankcreditservice.config.JwtUtils;
 import com.bank.hits.bankcreditservice.exception.ForbiddenAccessException;
 import com.bank.hits.bankcreditservice.model.DTO.*;
 import com.bank.hits.bankcreditservice.service.api.CreditApplicationService;
 import com.bank.hits.bankcreditservice.service.api.CreditPaymentService;
 import com.bank.hits.bankcreditservice.service.api.EmployeeVerificationService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -27,10 +29,15 @@ public class CreditApplicationController {
 
     private final CreditPaymentService creditPaymentService;
 
+    private final JwtUtils jwtUtils;
+
     @PostMapping("/loan/create")
     public ResponseEntity<CreditApplicationResponseDTO> applyForCredit(
             @RequestBody CreditApplicationRequestDTO request,
-            @RequestHeader("userId") String clientUuid) throws Exception {
+            HttpServletRequest httpServletRequest
+    ) throws Exception {
+
+        String clientUuid = jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest));
         log.info("Запрос на создание кредита от пользователя {}", clientUuid);
         if (clientUuid == null) {
             throw new SecurityException("Invalid token");
@@ -46,21 +53,22 @@ public class CreditApplicationController {
 
     @GetMapping("/loan/list")
     public ResponseEntity<UserLoansResponseDTO> getUserLoans(
-            @RequestHeader("userId") String clientUuid,
             @RequestParam int pageSize,
-            @RequestParam int pageNumber) {
+            @RequestParam int pageNumber,
+            HttpServletRequest httpServletRequest) {
 
+        String clientUuid = jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest));
         UserLoansResponseDTO response = creditApplicationService.getUserLoans(clientUuid, pageSize, pageNumber);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/employee/loan/{userId}/list")
     public ResponseEntity<UserLoansResponseDTO> getUserLoansFromEmployee(
-            @RequestHeader("userId") String clientUuid,
+            HttpServletRequest httpServletRequest,
             @PathVariable String userId,
             @RequestParam int pageSize,
             @RequestParam int pageNumber) throws Exception {
-
+        String clientUuid = jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest));
         if (clientUuid == null) {
             throw new SecurityException("Invalid token");
         }

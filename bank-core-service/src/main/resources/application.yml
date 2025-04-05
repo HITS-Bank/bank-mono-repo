@@ -12,8 +12,8 @@ spring:
     password: 12345
     driver-class-name: org.postgresql.Driver
   liquibase:
-    enabled: true
-    change-log: classpath:/db/changelog/changelog.xml
+    enabled: false
+#    change-log: classpath:/db/changelog/changelog.xml
   jpa:
     hibernate:
       ddl-auto: update
@@ -39,3 +39,13 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     enabled: true
+
+jwt:
+  auth:
+    converter:
+      resource-id: bank-rest-api
+      principle-attribute: preferred_username
+
+keycloak:
+  host-uri: http://keycloak:8080
+  mobile-app-host-uri: http://10.0.2.2:8080

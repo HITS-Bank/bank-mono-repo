@@ -2,6 +2,8 @@ package com.bank.hits.bankcoreservice.api.rest;
 
 import com.bank.hits.bankcoreservice.api.constant.ApiConstants;
 import com.bank.hits.bankcoreservice.api.dto.AccountDto;
+import com.bank.hits.bankcoreservice.config.JwtUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +26,8 @@ public class EmployeeController {
 
     private final ClientService clientService;
 
+    private final JwtUtils jwtUtils;
+
     @PostMapping(value = ApiConstants.BLOCK_CLIENT_ACCOUNTS , produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> blockClientAccounts(@PathVariable("clientId") final UUID clientId) {
         clientService.blockClientAccounts(clientId);
@@ -38,11 +42,12 @@ public class EmployeeController {
 
     @GetMapping(value = ApiConstants.CLIENT_INFO, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<AccountDto>> getAccountsList(
-            @RequestHeader("userId") final UUID employeeId,
+            final HttpServletRequest httpServletRequest,
             @PathVariable("userId") final UUID clientId,
             @RequestParam final int pageSize,
             @RequestParam final int pageNumber
     ) {
+        final UUID employeeId = UUID.fromString(jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest)));
         return ResponseEntity.ok(clientService.getAccountsList(clientId, employeeId, pageSize, pageNumber - 1));
     }
 

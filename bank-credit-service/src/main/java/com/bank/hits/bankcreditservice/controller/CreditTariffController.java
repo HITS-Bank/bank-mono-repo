@@ -1,5 +1,6 @@
 package com.bank.hits.bankcreditservice.controller;
 
+import com.bank.hits.bankcreditservice.config.JwtUtils;
 import com.bank.hits.bankcreditservice.exception.ForbiddenAccessException;
 import com.bank.hits.bankcreditservice.model.CreditTariff;
 import com.bank.hits.bankcreditservice.model.DTO.CreditTariffDTO;
@@ -7,6 +8,7 @@ import com.bank.hits.bankcreditservice.model.DTO.DeleteTariffDTO;
 import com.bank.hits.bankcreditservice.model.DTO.LoanTariffResponseDTO;
 import com.bank.hits.bankcreditservice.service.api.CreditTariffService;
 import com.bank.hits.bankcreditservice.service.api.EmployeeVerificationService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -32,9 +34,12 @@ public class CreditTariffController {
     private final CreditTariffService creditTariffService;
     private final EmployeeVerificationService employeeVerificationService;
 
+    private final JwtUtils jwtUtils;
+
     @PostMapping("/employee/loan/tariffs/create")
     public ResponseEntity<?> createTariff(@RequestBody CreditTariff tariff,
-                                          @RequestHeader("userId") String employeeUuid) throws Exception {
+                                          HttpServletRequest httpServletRequest) throws Exception {
+        String employeeUuid = jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest));
         log.info("Запрос на создание тарифа");
         if (employeeUuid == null) {
             throw new SecurityException("Invalid token");
@@ -52,7 +57,8 @@ public class CreditTariffController {
 
     @DeleteMapping("/employee/loan/tariffs/{tariffId}/delete")
     public ResponseEntity<?> DeleteTariff(@PathVariable String tariffId,
-                                          @RequestHeader("userId") String employeeUuid) throws Exception {
+                                          HttpServletRequest httpServletRequest) throws Exception {
+        String employeeUuid = jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest));
         log.info("Запрос на удаление тарифа от пользователя {}", employeeUuid);
         if (employeeUuid == null) {
             throw new SecurityException("Invalid token");
