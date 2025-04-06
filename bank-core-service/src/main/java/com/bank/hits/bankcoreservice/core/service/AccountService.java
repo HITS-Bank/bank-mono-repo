@@ -415,8 +415,10 @@ public class AccountService {
         accountRepository.save(fromAccount);
         accountRepository.save(toAccount);
 
-        recordAccountTransaction(fromAccount, OperationType.TRANSFER_OUTGOING, transferAmount, fromCurrency);
-        recordAccountTransaction(toAccount, OperationType.TRANSFER_INCOMING, convertedAmount, toCurrency);
+        final var fromTransaction = recordAccountTransaction(fromAccount, OperationType.TRANSFER_OUTGOING, transferAmount, fromCurrency);
+        final var toTransaction = recordAccountTransaction(toAccount, OperationType.TRANSFER_INCOMING, convertedAmount, toCurrency);
+        transactionWebSocketController.sendTransactionUpdate(fromAccount.getId(), fromTransaction);
+        transactionWebSocketController.sendTransactionUpdate(toAccount.getId(), toTransaction);
 
         return mapToDto(fromAccount);
     }
