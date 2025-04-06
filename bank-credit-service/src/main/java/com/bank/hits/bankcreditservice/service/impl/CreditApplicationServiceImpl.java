@@ -182,12 +182,12 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         return response;
     }
 
-    public UserLoansResponseDTO.LoanDTO getCreditByNumber(String number)
+    public UserLoansResponseDTO.LoanDTO getCreditById(UUID id)
     {
-        Optional<CreditHistory> credit = creditHistoryRepository.findByNumber(number);
+        Optional<CreditHistory> credit = creditHistoryRepository.findById(id);
         if(!credit.isPresent())
         {
-            throw new NoSuchElementException("Не удалось найти тариф с указанным номером");
+            throw new NoSuchElementException("Не удалось найти кредит с указанным id");
         }
         CreditHistory request = credit.get();
         /*
