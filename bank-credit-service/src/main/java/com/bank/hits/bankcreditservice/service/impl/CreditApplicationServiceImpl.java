@@ -230,6 +230,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
 
     private UserLoansResponseDTO.LoanDTO convertToDTO(CreditHistory credit) {
         UserLoansResponseDTO.LoanDTO loanDTO = new UserLoansResponseDTO.LoanDTO();
+        loanDTO.setId(credit.getId());
         loanDTO.setNumber(credit.getNumber());
         loanDTO.setAmount(credit.getTotalAmount());
         loanDTO.setTermInMonths((int) credit.getEndDate().minusMonths(credit.getStartDate().getMonthValue()).getMonthValue());
