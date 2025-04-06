@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @Repository
 public interface CreditTransactionRepository extends JpaRepository<CreditTransaction, UUID> {
-    List<CreditTransaction> findByCreditContractId(Collection<CreditContract> creditContracts);
+    List<CreditTransaction> findByCreditContractIn(Collection<CreditContract> creditContracts);
 
     List<CreditTransaction> findByCreditContractId(UUID creditContractId);
 }

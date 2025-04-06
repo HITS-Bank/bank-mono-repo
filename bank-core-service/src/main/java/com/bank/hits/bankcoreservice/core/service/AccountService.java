@@ -65,7 +65,7 @@ public class AccountService {
     }
 
     public AccountDto deposit(final TopUpRequest request, String accountId) {
-        final Account account = accountRepository.findByAccountId(accountId)
+        final Account account = accountRepository.findById(UUID.fromString(accountId))
                 .orElseThrow(() -> new EntityNotFoundException("Account not found"));
         if (account.isClosed()) {
             throw new EntityNotFoundException("Account is closed");
@@ -97,7 +97,7 @@ public class AccountService {
     }
 
     public AccountDto withdraw(final WithdrawRequest request, final String accountId) {
-        final Account account = accountRepository.findByAccountId(accountId)
+        final Account account = accountRepository.findById(UUID.fromString(accountId))
                 .orElseThrow(() -> new EntityNotFoundException("Account not found"));
         if (account.isClosed()) {
             throw new EntityNotFoundException("Account is closed");
@@ -241,6 +241,7 @@ public class AccountService {
         final CreditTransaction tx = new CreditTransaction();
 
         tx.setCreditContract(creditContract);
+        tx.setCreditContractId(creditContract.getCreditContractId());
         tx.setTransactionType(type);
         tx.setPaymentAmount(amount);
         tx.setPaymentDate(LocalDateTime.now());
