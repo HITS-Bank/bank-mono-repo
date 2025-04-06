@@ -89,6 +89,7 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
             kafkaTemplate.send(record);
             log.info("Отправлен запрос на оплату кредита: {}", message);
             semaphoreMap.put(correlationId, new SemaphoreResponsePair(new Semaphore(0), null));
+            log.info("CORRELATION_ID: {}", correlationId);
         } catch (JsonProcessingException e) {
             log.error("Ошибка при сериализации CreditPaymentProcessingDTO", e);
         }
@@ -107,6 +108,7 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
         String correlationId = new String(header.value());
         String response = record.value();
 
+        log.info("ПРИШЁЛ CORRELATION_ID {}", correlationId);
         SemaphoreResponsePair pair = semaphoreMap.get(correlationId);
         if (pair != null) {
             pair.setResponse(response);
