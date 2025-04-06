@@ -61,8 +61,9 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
             throw new RuntimeException("No valid response received for credit payment");
         }
 
+        log.info("responseDTO json: {}", pair.getResponse());
         CreditPaymentResponseDTO responseDTO = objectMapper.readValue(pair.getResponse(), CreditPaymentResponseDTO.class);
-        log.info("responseDTO:", responseDTO);
+        log.info("responseDTO: {}", responseDTO);
         if (responseDTO.isApproved()) {
             creditHistory.setRemainingDebt(creditHistory.getRemainingDebt().subtract(responseDTO.getApprovedAmount()));
             creditHistoryRepository.save(creditHistory);

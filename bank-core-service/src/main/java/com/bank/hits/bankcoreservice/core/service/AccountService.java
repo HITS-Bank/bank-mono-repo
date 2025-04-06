@@ -274,7 +274,7 @@ public class AccountService {
             overduePayment.setPaymentDate(LocalDateTime.now());
             overduePaymentRepository.save(overduePayment);
             log.info("Просрочен, обработано");
-            return new CreditPaymentResponseDTO(false, account.getBalance().toString());
+            return new CreditPaymentResponseDTO(false, account.getBalance());
         }
 
         log.info("Можем оплатить:");
@@ -297,7 +297,7 @@ public class AccountService {
             Client client = account.getClient();
             creditRatingService.updateCreditRating(client, creditContract);
         }
-        return new CreditPaymentResponseDTO(true, account.getBalance().toString());
+        return new CreditPaymentResponseDTO(true, amount);
     }
 
     private AccountTransactionDto recordAccountTransaction(final Account account, final OperationType type, final BigDecimal amount, final CurrencyCode currencyCode) {
@@ -481,6 +481,7 @@ public class AccountService {
         CreditContract creditContract = creditContractRepository.findByCreditApprovedId(loanId)
                 .orElseThrow(() -> new RuntimeException("Credit contract not found"));
         List<CreditTransaction> successfulPayments = creditTransactionRepository.findByCreditContract(creditContract);
+        log.info("SuccessfulPayments: {}", successfulPayments);
         for (CreditTransaction tx : successfulPayments) {
             PaymentResponseDTO dto = new PaymentResponseDTO();
             dto.setId(tx.getTransactionId());

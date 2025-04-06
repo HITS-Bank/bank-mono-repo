@@ -90,8 +90,8 @@ public class CreditApplicationController {
     }
 
     @GetMapping("/loan/{loanId}")
-    public ResponseEntity<UserLoansResponseDTO.LoanDTO> getloanByNumber(@PathVariable String loanId) {
-        UserLoansResponseDTO.LoanDTO credit = creditApplicationService.getCreditByNumber(loanId);
+    public ResponseEntity<UserLoansResponseDTO.LoanDTO> getloanById(@PathVariable UUID loanId) {
+        UserLoansResponseDTO.LoanDTO credit = creditApplicationService.getCreditById(loanId);
         return ResponseEntity.ok(credit);
     }
 }
