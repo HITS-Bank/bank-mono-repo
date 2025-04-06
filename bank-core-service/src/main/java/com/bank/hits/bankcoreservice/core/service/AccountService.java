@@ -346,10 +346,7 @@ public class AccountService {
         return accounts.stream().map(accountMapper::map).toList();
     }
 
-    private void validateTransfer(final Client client, final Account source, final Account target, final String amountStr) {
-        if (!client.getId().equals(target.getId())) {
-            throw new IllegalArgumentException("Account does not belong to the specified client");
-        }
+    private void validateTransfer(final Account source, final Account target, final String amountStr) {
 
         if (source.isClosed() || target.isClosed()) {
             throw new IllegalStateException("One of the accounts is closed");
@@ -385,7 +382,7 @@ public class AccountService {
 
         final BigDecimal transferAmount = new BigDecimal(request.getTransferAmount());
 
-        validateTransfer(client, fromAccount, toAccount, request.getTransferAmount());
+        validateTransfer(fromAccount, toAccount, request.getTransferAmount());
 
         final CurrencyCode fromCurrency = fromAccount.getCurrencyCode();
         final CurrencyCode toCurrency = toAccount.getCurrencyCode();
@@ -474,6 +471,7 @@ public class AccountService {
         dto.setAccountNumber(account.getAccountNumber());
         dto.setClosed(account.isClosed());
         dto.setBlocked(account.isBlocked());
+        dto.setCurrencyCode(account.getCurrencyCode().toString());
         return dto;
     }
 
