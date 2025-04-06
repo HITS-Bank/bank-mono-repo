@@ -9,6 +9,7 @@ import com.bank.hits.bankcreditservice.service.api.EmployeeVerificationService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @AllArgsConstructor
@@ -33,23 +35,33 @@ public class CreditApplicationController {
     private final JwtUtils jwtUtils;
 
     @PostMapping("/loan/create")
-    public ResponseEntity<CreditApplicationResponseDTO> applyForCredit(
+    public ResponseEntity<?> applyForCredit(
             @RequestBody CreditApplicationRequestDTO request,
             HttpServletRequest httpServletRequest
     ) throws Exception {
 
-        String clientUuid = jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest));
-        log.info("Запрос на создание кредита от пользователя {}", clientUuid);
-        if (clientUuid == null) {
-            throw new SecurityException("Invalid token");
-        }
-        boolean isVerified = employeeVerificationService.verifyEmployee(clientUuid);
-        if (!isVerified) {
-            throw new ForbiddenAccessException("Client is blocked");
-        }
+        try {
+            String clientUuid = jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest));
+            log.info("Запрос на создание кредита от пользователя {}", clientUuid);
 
-        CreditApplicationResponseDTO response = creditApplicationService.processApplication(request, clientUuid);
-        return ResponseEntity.ok(response);
+            if (clientUuid == null) {
+                throw new SecurityException("Invalid token");
+            }
+
+            boolean isVerified = employeeVerificationService.verifyEmployee(clientUuid);
+            if (!isVerified) {
+                throw new ForbiddenAccessException("Client is blocked");
+            }
+
+            CreditApplicationResponseDTO response = creditApplicationService.processApplication(request, clientUuid);
+            return ResponseEntity.ok(response);
+
+        } catch (SecurityException | ForbiddenAccessException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Ошибка при создании кредита", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", e.getMessage()));
+        }
     }
 
     @GetMapping("/loan/list")

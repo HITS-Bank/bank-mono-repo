@@ -58,13 +58,18 @@ public class AccountEventConsumer {
         }
     }
 
-    @KafkaListener(topics = "credit.approved", groupId = "bank.group")
+    @KafkaListener(topics = "credit.approved.request", groupId = "bank.group")
     public void handleCreditApproved(final ConsumerRecord<String, String> record) {
         log.info("Received credit.create event: {}", record.value());
         try {
+            final UUID correlationId = parseCorrelationId(record);
+            if(correlationId == null)
+            {
+                throw  new RuntimeException("Получено сообщение без correlationId");
+            }
             CreditApprovedDto creditApprovedDto = objectMapper.readValue(record.value(), CreditApprovedDto.class);
             log.info("creditApproveDTO: {}", creditApprovedDto);
-            creditService.processCreditApproval(creditApprovedDto);
+            creditService.processCreditApproval(creditApprovedDto,correlationId);
             log.info("Credit created successfully for client {}", creditApprovedDto.getClientId());
         } catch (Exception e) {
             log.error("Error processing credit.create event: {}", e.getMessage(), e);

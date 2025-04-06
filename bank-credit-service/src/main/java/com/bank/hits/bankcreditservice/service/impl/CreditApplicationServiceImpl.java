@@ -84,7 +84,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         }
         CreditClientInfoResponseDTO clientInfo = objectMapper.readValue(pair.getResponse(), CreditClientInfoResponseDTO.class);
         log.info("clientInfo = {}", clientInfo);
-        boolean approved = true;
+        boolean approved = approveCredit(request,clientInfo);
         log.info("approved - {}", approved);
         if(!approved)
         {
@@ -129,8 +129,26 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         creditHistory.setNumber(creditNumber);
         creditHistory.setBankAccountNumber(request.getBankAccountNumber());
         creditHistory.setBankAccountId(request.getBankAccountId());
+
+
+        String correlationId2 =  sendCreditApprovedEvent(creditHistory);
+        Semaphore semaphore2 = semaphoreMap.get(correlationId2).getSemaphore();
+        boolean acquired2 = semaphore2.tryAcquire(30, TimeUnit.SECONDS);
+        if (!acquired2) {
+            throw new RuntimeException("Timeout waiting for client info response");
+        }
+        log.info("Получен ответ");
+        SemaphoreResponsePair pair2 = semaphoreMap.remove(correlationId);
+        if (pair2 == null || pair2.getResponse() == null) {
+            throw new RuntimeException("No valid response received for client info");
+        }
+        boolean approveCredit = objectMapper.readValue(pair.getResponse(), boolean.class);
+        log.info("approveCredit - {}", approveCredit);
+        if(!approveCredit)
+        {
+            throw new CreditCreationException("Не удалось получить кредит, попробуйте позже");
+        }
         creditHistoryRepository.save(creditHistory);
-        sendCreditApprovedEvent(creditHistory);
         return responseDTO;
     }
 
@@ -233,7 +251,8 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         return loanDTO;
     }
 
-    private void sendCreditApprovedEvent(CreditHistory creditHistory) {
+    private String sendCreditApprovedEvent(CreditHistory creditHistory) {
+        String correlationId = UUID.randomUUID().toString();
         try {
             CreditApprovedDTO approvedDto = new CreditApprovedDTO();
             approvedDto.setCreditId(creditHistory.getId());
@@ -246,12 +265,14 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
 
             String message = objectMapper.writeValueAsString(approvedDto);
             ProducerRecord<String, String> record = new ProducerRecord<>(creditApprovedTopic, message);
+            record.headers().add("correlation_id", correlationId.getBytes());
             log.info("record подтверждения кредита: {}", record);
             kafkaTemplate.send(record);
             log.info("Сообщение о подтверждении кредита отправлено в Kafka: {}", message);
         } catch (JsonProcessingException e) {
             log.error("Ошибка при сериализации CreditApprovedDto", e);
         }
+        return correlationId;
     }
 
     private BigDecimal calculateMonthlyPayment(BigDecimal amount, double interestRate, int months) {
@@ -364,6 +385,28 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
             log.warn("Не найден ожидающий поток для correlationId: " + correlationId);
         }
     }
+
+
+    @KafkaListener(topics = "${kafka.topics.approve.response}", groupId = "creditClientInfoGroup")
+    public void receiveCreditApproveResponse(ConsumerRecord<String, String> record) {
+        log.info("Получено сообщение одобрения кредита");
+        Header header = record.headers().lastHeader("correlation_id");
+        if (header == null) {
+            log.warn("Получен ответ без заголовка correlation_id");
+            return;
+        }
+        String correlationId = new String(header.value());
+        log.info("correlationId {}", correlationId);
+        String response = record.value();
+        SemaphoreResponsePair pair = semaphoreMap.get(correlationId);
+        if (pair != null) {
+            pair.setResponse(response);
+            pair.getSemaphore().release();
+        } else {
+            log.warn("Не найден ожидающий поток для correlationId: " + correlationId);
+        }
+    }
+
     private static class SemaphoreResponsePair {
         private Semaphore semaphore;
         private String response;

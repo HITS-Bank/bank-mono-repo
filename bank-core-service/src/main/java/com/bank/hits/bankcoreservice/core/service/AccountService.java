@@ -357,7 +357,7 @@ public class AccountService {
 
         final Account fromAccount = accountRepository.findById(request.getSenderAccountId())
                 .orElseThrow(() -> new RuntimeException("Sender account not found"));
-        final Account toAccount = accountRepository.findById(request.getReceiverAccountId())
+        final Account toAccount = accountRepository.findByAccountNumber(request.getReceiverAccountNumber())
                 .orElseThrow(() -> new RuntimeException("Recipient account not found"));
 
         final BigDecimal transferAmount = new BigDecimal(request.getTransferAmount());
@@ -402,7 +402,7 @@ public class AccountService {
         final Account fromAccount = accountRepository.findById(request.getSenderAccountId())
                 .orElseThrow(() -> new RuntimeException("Sender account not found"));
 
-        final Account toAccount = accountRepository.findById(request.getReceiverAccountId())
+        final Account toAccount = accountRepository.findByAccountNumber(request.getReceiverAccountNumber())
                 .orElseThrow(() -> new RuntimeException("Recipient account not found"));
 
         final TransferInfo transferInfo = new TransferInfo();

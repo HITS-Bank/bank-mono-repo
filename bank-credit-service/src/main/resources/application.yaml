@@ -45,7 +45,9 @@ kafka:
     core-information:
       request: credit.client.info.request
       response: credit.client.info.response
-    approve: credit.approved
+    approve:
+      request: credit.approved.request
+      response: credit.approved.response
     credit-payment:
       request: credit.payment.request
       response: credit.payment.response
