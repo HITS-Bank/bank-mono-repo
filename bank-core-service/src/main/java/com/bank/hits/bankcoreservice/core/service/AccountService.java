@@ -69,6 +69,17 @@ public class AccountService {
         accountRepository.save(account);
     }
 
+    public void closeAccount(final UUID accountId, final UUID clientId) {
+        final Client client = clientRepository.findById(clientId)
+                .orElseThrow(() -> new EntityNotFoundException("Client not found"));
+        if (client.isBlocked()) {
+            throw new RuntimeException("Client is blocked");
+        }
+        final Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
+        account.setClosed(true);
+        accountRepository.save(account);
+    }
     /*
     public AccountDto deposit(final TopUpRequest request, String accountId) {
         final Account account = accountRepository.findById(UUID.fromString(accountId))
@@ -458,7 +469,7 @@ public class AccountService {
     public List<PaymentResponseDTO> getPayments(UUID loanId)
     {
         List<PaymentResponseDTO> result = new ArrayList<>();
-        CreditContract creditContract = creditContractRepository.findById(loanId)
+        CreditContract creditContract = creditContractRepository.findByCreditApprovedId(loanId)
                 .orElseThrow(() -> new RuntimeException("Credit contract not found"));
         List<CreditTransaction> successfulPayments = creditTransactionRepository.findByCreditContract(creditContract);
         for (CreditTransaction tx : successfulPayments) {
