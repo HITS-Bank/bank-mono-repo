@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @AllArgsConstructor
@@ -82,8 +83,8 @@ public class CreditApplicationController {
     }
 
     @PostMapping("/loan/{loanId}/pay")
-    public ResponseEntity<String> payCredit(@RequestBody CreditPaymentRequestDTO request) throws Exception {
-        boolean success = creditPaymentService.processPayment(request, PaymentStatus.MANUAL);
+    public ResponseEntity<String> payCredit(@PathVariable UUID loanId, @RequestBody CreditPaymentRequestDTO request) throws Exception {
+        boolean success = creditPaymentService.processPayment(loanId,request, PaymentStatus.MANUAL);
         return success ? ResponseEntity.ok("Платёж успешно проведён") :
                 ResponseEntity.badRequest().body("Платёж не одобрен");
     }

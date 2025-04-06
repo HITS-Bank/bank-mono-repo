@@ -6,6 +6,5 @@ import java.math.BigDecimal;
 
 @Data
 public class CreditPaymentRequestDTO {
-    private String loanNumber;
-    private BigDecimal paymentAmount;
+    private BigDecimal amount;
 }
