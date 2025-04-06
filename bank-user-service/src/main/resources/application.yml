@@ -1,11 +1,13 @@
 spring:
   application:
     name: user_service
+
   datasource:
     url: ${USER_DATABASE_URL:jdbc:postgresql://localhost:5433/users}
     username: myuser
     password: mypassword
     driver-class-name: org.postgresql.Driver
+
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
@@ -15,22 +17,39 @@ spring:
       hibernate:
         format_sql: true
         show_sql: true
-  kafka:
-    bootstrap-servers: ${BOOTSTRAP_SERVERS:kafka:9092}
+
   sql:
     init:
       mode: always
+
+  kafka:
+    bootstrap-servers: ${BOOTSTRAP_SERVERS:kafka:9092}
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://keycloak:8080/realms/bank
+          jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs
+
 logging:
   level:
     org:
       springframework:
         security: DEBUG
+
 jwt:
-  secret: 9a4f2c8d3b7a1e6f45c8a0b3f267d8b1ad1f123a9d2b5f8e3a9c8b5f6v8a3d9
-  accessToken:
-    expirationMillis: 3600000 # 1hr
-  refreshToken:
-    expirationMillis: 2592000000 # 30d
+  auth:
+    converter:
+      resource-id: bank-rest-api
+      principle-attribute: preferred_username
+
+keycloak:
+  host-uri: http://keycloak:8080
+  realm-name: bank
+  bank-client-id: bank-rest-api
+  admin-client-id: admin-service
+  admin-client-secret: CsKlETJ2ZFKFYd2ipsgwHjHAD57alKn2
 
 server:
   port: ${APP_PORT:9447}

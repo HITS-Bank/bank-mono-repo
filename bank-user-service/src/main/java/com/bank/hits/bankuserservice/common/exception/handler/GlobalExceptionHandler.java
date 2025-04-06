@@ -1,10 +1,10 @@
 package com.bank.hits.bankuserservice.common.exception.handler;
 
+import com.bank.hits.bankuserservice.common.exception.ForbiddenActionException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import com.bank.hits.bankuserservice.common.exception.*;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -13,13 +13,7 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler({
-            InvalidCredentialsException.class,
-            UnauthorizedException.class,
-            InitiatorUserNotFoundException.class,
-            UserAlreadyExistsException.class,
             ForbiddenActionException.class,
-            IncorrectActionException.class,
-            UserNotFoundException.class,
     })
     public ResponseEntity<Map<String, Object>> handleCustomExceptions(RuntimeException ex) {
         HttpStatus status = determineStatus(ex);
@@ -32,13 +26,7 @@ public class GlobalExceptionHandler {
     }
 
     private HttpStatus determineStatus(RuntimeException ex) {
-        if (ex instanceof InvalidCredentialsException) return HttpStatus.UNAUTHORIZED;
-        if (ex instanceof UnauthorizedException) return HttpStatus.UNAUTHORIZED;
-        if (ex instanceof InitiatorUserNotFoundException) return HttpStatus.UNAUTHORIZED;
-        if (ex instanceof UserAlreadyExistsException) return HttpStatus.CONFLICT;
         if (ex instanceof ForbiddenActionException) return HttpStatus.FORBIDDEN;
-        if (ex instanceof IncorrectActionException) return HttpStatus.BAD_REQUEST;
-        if (ex instanceof UserNotFoundException) return HttpStatus.NOT_FOUND;
         return HttpStatus.BAD_REQUEST;
     }
 

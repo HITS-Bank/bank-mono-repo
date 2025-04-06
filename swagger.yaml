@@ -4,19 +4,21 @@ info:
   description: |-
   version: '1.0'
 tags:
-  - name: Auth
-    description: Работа с аутентификацией/авторизацией (Deprecated, тут будет SSO)
-  - name: Profile
-    description: Работа с профилями пользователей
+  - name: Users
+    description: Работа с пользователями
   - name: Bank Account
     description: Работа со счетами
   - name: Loan
     description: Работа с кредитами
+  - name: Personalization
 paths:
-  /auth/login:
+  /personalization/theme:
     post:
       tags:
-        - Auth
+        - Personalization
+      security:
+        - bearerAuth: []
+      description: Задать тему приложения
       parameters:
         - name: channel
           in: query
@@ -27,44 +29,119 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginCredentials'
+              $ref: '#/components/schemas/ThemeModel'
       responses:
         '200':
-          description: Авторизация успешно завершена
+          description: Тема задана
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TokenResponse'
+                $ref: '#/components/schemas/ThemeModel'
         '400':
           description: Bad Request
+        '401':
+          description: Unauthorized
         '500':
           description: Internal server error
-  /auth/refresh:
-    post:
+    get:
       tags:
-        - Auth
+        - Personalization
       security:
         - bearerAuth: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RefreshRequest'
+      description: Получить тему приложения
+      parameters:
+        - name: channel
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Channel'
       responses:
         '200':
-          description: Токены обновлены
+          description: Тема получена
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TokenResponse'
+                $ref: '#/components/schemas/ThemeModel'
+        '400':
+          description: Bad Request
         '401':
-          description: Refresh token is invalid or expired
+          description: Unauthorized
         '500':
           description: Internal server error
-  /employee/auth/register:
+  /personalization/hiddenAccount:
     post:
       tags:
-        - Auth
+        - Personalization
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Счёт скрыт
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+    delete:
+      tags:
+        - Personalization
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Счёт удалён из скрытых
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+  /personalization/hiddenAccount/list:
+    get:
+      tags:
+        - Personalization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Получен список скрытых счетов
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - accounts
+                properties:
+                  accounts:
+                    type: array
+                    items:
+                      type: string
+                      format: uuid
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+  /users/employee/users/register:
+    post:
+      tags:
+        - Users
       description: Запрос доступен только сотрудникам (если сотрудник не заблокирован)
       security:
         - bearerAuth: []
@@ -84,10 +161,10 @@ paths:
           description: Forbidden; возвращается, когда вызывающий - клиент или заблокированный сотрудник
         '500':
           description: Internal server error
-  /profile:
+  /users/profile:
     get:
       tags:
-        - Profile
+        - Users
       security:
         - bearerAuth: []
       responses:
@@ -101,10 +178,10 @@ paths:
           description: Unauthorized
         '500':
           description: Internal server error
-  /employee/profile/{userId}/ban:
+  /users/employee/users/{userId}/ban:
     post:
       tags:
-        - Profile
+        - Users
       description: Запрос доступен только сотрудникам (если сотрудник не заблокирован)
       security:
         - bearerAuth: []
@@ -126,10 +203,10 @@ paths:
           description: Forbidden; возвращается, когда вызывающий - клиент или заблокированный сотрудник
         '500':
           description: Internal server error
-  /employee/profile/{userId}/unban:
+  /users/employee/users/{userId}/unban:
     post:
       tags:
-        - Profile
+        - Users
       description: Запрос доступен только сотрудникам (если сотрудник не заблокирован)
       security:
         - bearerAuth: []
@@ -151,17 +228,17 @@ paths:
           description: Forbidden; возвращается, когда вызывающий - клиент или заблокированный сотрудник
         '500':
           description: Internal server error
-  /employee/profile/list:
+  /users/employee/users/list:
     get:
       tags:
-        - Profile
+        - Users
       description: Запрос доступен только сотрудникам (если сотрудник не заблокирован)
       security:
         - bearerAuth: []
       parameters:
         - name: role
           in: query
-          required: true
+          required: false
           schema:
             $ref: '#/components/schemas/Channel'
         - name: nameQuery
@@ -371,6 +448,10 @@ paths:
       responses:
         '204':
           description: Счет пополнен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankAccount'
         '400':
           description: Bad Request - некорректная сумма денег
         '401':
@@ -401,6 +482,10 @@ paths:
       responses:
         '204':
           description: Средства сняты со счёта
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankAccount'
         '400':
           description: Bad Request - некорректная сумма денег
         '401':
@@ -453,6 +538,10 @@ paths:
       responses:
         '204':
           description: Средства переведены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankAccount'
         '400':
           description: Bad Request - некорректная сумма денег
         '401':
@@ -572,6 +661,11 @@ paths:
           schema:
             type: string
             format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanPaymentRequest'
       responses:
         '200':
           description: Выплата по кредиту прошла успешно
@@ -819,6 +913,19 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    Theme:
+      type: string
+      enum:
+        - DARK
+        - LIGHT
+        - SAME_AS_SYSTEM
+    ThemeModel:
+      type: object
+      required:
+        - theme
+      properties:
+        theme:
+          $ref: '#/components/schemas/Theme'
     TransferAccountInfo:
       type: object
       required:
@@ -913,6 +1020,14 @@ components:
           example: '300000000'
         currencyCode:
           $ref: '#/components/schemas/CurrencyCode'
+    LoanPaymentRequest:
+      type: object
+      required:
+        - amount
+      properties:
+        amount:
+          type: string
+          example: '300000000'
     Loan:
       type: object
       required:
@@ -982,6 +1097,7 @@ components:
         - amount
         - termInMonths
         - bankAccountId
+        - bankAccountNumber
       properties:
         tariffId:
           type: string
@@ -995,6 +1111,11 @@ components:
         bankAccountId:
           type: string
           format: uuid
+        bankAccountNumber:
+          type: string
+          minLength: 20
+          maxLength: 20
+          example: '40802810500001846336'
     LoanTariff:
       type: object
       required:
@@ -1044,6 +1165,8 @@ components:
         - WITHDRAWAL
         - TOP_UP
         - LOAN_PAYMENT
+        - TRANSFER_INCOMING
+        - TRANSFER_OUTGOING
     Operation:
       type: object
       required:
@@ -1134,7 +1257,6 @@ components:
       required:
         - firstName
         - lastName
-        - email
         - password
         - role
       properties:
@@ -1142,18 +1264,15 @@ components:
           type: string
         lastName:
           type: string
-        email:
-          type: string
-          format: email
-          example: 'a@a.a'
-          minLength: 5
         password:
           type: string
           example: 'p.ssw0rd'
           minLength: 6
           maxLength: 30
         role:
-          $ref: '#/components/schemas/Channel'
+          type: array
+          items:
+            $ref: '#/components/schemas/Channel'
     TokenResponse:
       type: object
       required:
