@@ -11,7 +11,6 @@ import com.bank.hits.bankcoreservice.api.dto.CreditApprovedDto;
 import com.bank.hits.bankcoreservice.api.dto.CreditContractDto;
 import com.bank.hits.bankcoreservice.api.dto.CreditTransactionDto;
 import com.bank.hits.bankcoreservice.api.enums.AccountType;
-import com.bank.hits.bankcoreservice.api.enums.CreditTransactionType;
 import com.bank.hits.bankcoreservice.config.service.KafkaProducerService;
 import com.bank.hits.bankcoreservice.core.entity.Account;
 import com.bank.hits.bankcoreservice.core.entity.Client;
@@ -81,7 +80,7 @@ public class CreditService {
                     });
             log.info("client id : {}", client.getClientId());
 
-            final Account creditAccount = accountRepository.findByClientAndAccountType(client, AccountType.CREDIT)
+            final Account creditAccount = accountRepository.findById(creditApprovedDto.getAccountId())
                     .orElseGet(() -> createCreditAccount(client));
 
             log.info("до masterAccount");

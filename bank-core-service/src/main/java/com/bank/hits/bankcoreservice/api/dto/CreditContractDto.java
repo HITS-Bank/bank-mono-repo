@@ -21,8 +21,4 @@ public class CreditContractDto {
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     @JsonProperty("startDate")
     private LocalDateTime startDate;
-    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
-    @JsonSerialize(using = LocalDateTimeSerializer.class)
-    @JsonProperty("endDate")
-    private LocalDateTime endDate;
 }

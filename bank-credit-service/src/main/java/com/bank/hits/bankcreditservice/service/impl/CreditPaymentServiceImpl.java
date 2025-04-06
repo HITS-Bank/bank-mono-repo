@@ -49,7 +49,7 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
     public boolean processPayment(UUID loanId,CreditPaymentRequestDTO request, PaymentStatus paymentStatus) throws Exception {
         CreditHistory creditHistory = creditHistoryRepository.findById(loanId)
                 .orElseThrow(() -> new RuntimeException("Кредит с таким номером не найден"));
-        String correlationId = sendPaymentRequest(creditHistory.getId(), request.getAmount(), paymentStatus);
+        String correlationId = sendPaymentRequest(creditHistory.getId(), request.getAmount(), paymentStatus, creditHistory.getRemainingDebt());
         Semaphore semaphore = new Semaphore(0);
         semaphoreMap.put(correlationId, new SemaphoreResponsePair(semaphore, null));
         boolean acquired = semaphore.tryAcquire(30, TimeUnit.SECONDS);
@@ -73,7 +73,7 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
         }
     }
 
-    private String sendPaymentRequest(UUID creditId, BigDecimal amount, PaymentStatus paymentStatus) {
+    private String sendPaymentRequest(UUID creditId, BigDecimal amount, PaymentStatus paymentStatus, BigDecimal remainingAmount) {
         log.info("pay started");
         String correlationId = UUID.randomUUID().toString();
         try {
@@ -82,6 +82,7 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
             paymentDTO.setCreditContractId(creditId);
             paymentDTO.setEnrollmentDate(LocalDateTime.now());
             paymentDTO.setPaymentStatus(paymentStatus);
+            paymentDTO.setRemainingAmount(remainingAmount);
             log.info("creditContractID: {} ", paymentDTO.getCreditContractId());
             String message = objectMapper.writeValueAsString(paymentDTO);
             log.info("message при отправке оплаты: {}", message);

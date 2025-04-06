@@ -261,6 +261,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
             CreditApprovedDTO approvedDto = new CreditApprovedDTO();
             log.info("creditId = " + creditHistory.getId());
             approvedDto.setCreditId(creditHistory.getId());
+            approvedDto.setAccountId(creditHistory.getBankAccountId());
             approvedDto.setClientId(creditHistory.getClientUuid());
             approvedDto.setApprovedAmount(creditHistory.getTotalAmount());
             approvedDto.setRemainingAmount(creditHistory.getRemainingDebt());
@@ -329,7 +330,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
     private boolean hasOverdueCredits(List<CreditContractDto> credits) {
         LocalDateTime now = LocalDateTime.now();
         for (CreditContractDto credit : credits) {
-            if (credit.getEndDate().isBefore(now) && credit.getCreditRepaymentAmount().compareTo(BigDecimal.ZERO) > 0) {
+            if (credit.getCreditRepaymentAmount() != null && credit.getCreditRepaymentAmount().compareTo(BigDecimal.ZERO) > 0) {
                 return true; // Есть просроченные кредиты
             }
         }

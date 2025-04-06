@@ -265,7 +265,10 @@ public class AccountService {
         }
 
         log.info("Над amount");
-        final var amount = new BigDecimal(repaymentRequest.getCreditAmount());
+        var amount = new BigDecimal(repaymentRequest.getCreditAmount());
+        if (amount.compareTo(repaymentRequest.getRemainingAmount()) > 0) {
+            amount = repaymentRequest.getRemainingAmount();
+        }
         if (account.getBalance().subtract(amount).compareTo(BigDecimal.ZERO) < 0) {
             log.info("Просрочен, начало обработки");
             OverduePayment overduePayment = new OverduePayment();
@@ -289,11 +292,16 @@ public class AccountService {
         account.setBalance(account.getBalance().subtract(amount));
         accountRepository.save(account);
         recordCreditTransaction(creditContract, CreditTransactionType.CREDIT_REPAYMENT_AUTO, amount, repaymentRequest.getPaymentStatus());
+        var transaction = recordAccountTransaction(account, OperationType.LOAN_PAYMENT, amount, CurrencyCode.RUB);
 
-        creditContract.setRemainingAmount(creditContract.getRemainingAmount().max(BigDecimal.ZERO));
+        transactionWebSocketController.sendTransactionUpdate(account.getId(), transaction);
+
+        creditContract.setRemainingAmount(creditContract.getRemainingAmount().subtract(amount).max(BigDecimal.ZERO));
         creditContractRepository.save(creditContract);
+        log.info("Credit contract remaining amount {}", creditContract.getRemainingAmount());
 
         if (creditContract.getRemainingAmount().compareTo(BigDecimal.ZERO) == 0) {
+            log.info("Зашли в изменение кредитного рейтинга");
             Client client = account.getClient();
             creditRatingService.updateCreditRating(client, creditContract);
         }
@@ -387,7 +395,7 @@ public class AccountService {
         final CurrencyCode fromCurrency = fromAccount.getCurrencyCode();
         final CurrencyCode toCurrency = toAccount.getCurrencyCode();
         final BigDecimal originalAmount = new BigDecimal(request.getTransferAmount());
-        BigDecimal convertedAmount = null;
+        BigDecimal convertedAmount;
         if(fromCurrency != toCurrency)
         {
             try{
@@ -397,6 +405,8 @@ public class AccountService {
             {
                 throw new RuntimeException("Error during currency conversion");
             }
+        } else {
+            convertedAmount = originalAmount;
         }
 
         fromAccount.setBalance(fromAccount.getBalance().subtract(originalAmount));
@@ -457,6 +467,8 @@ public class AccountService {
             {
                 throw new RuntimeException("Error during currency conversion");
             }
+        } else {
+            convertedAmount = originalAmount;
         }
 
         transferInfo.setTransferAmountAfterConversion(String.valueOf(convertedAmount));
@@ -491,7 +503,7 @@ public class AccountService {
             dto.setCurrencyCode("RUB");
             result.add(dto);
         }
-        List<OverduePayment> overduePayments = overduePaymentRepository.findByCreditContractId(loanId);
+        List<OverduePayment> overduePayments = overduePaymentRepository.findByCreditContractId(creditContract.getCreditContractId());
         for (OverduePayment op : overduePayments) {
             PaymentResponseDTO dto = new PaymentResponseDTO();
             dto.setId(op.getId());

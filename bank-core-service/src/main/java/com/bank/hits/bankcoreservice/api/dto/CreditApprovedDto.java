@@ -9,6 +9,7 @@ import java.util.UUID;
 @Data
 public class CreditApprovedDto {
     private UUID clientId;
+    private UUID accountId;
     private UUID creditId;
     private BigDecimal approvedAmount;
     private BigDecimal remainingAmount;
