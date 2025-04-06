@@ -63,12 +63,18 @@ public class AccountService {
     }
 
     public void closeAccount(final CloseAccountRequest request) {
-        final Account account = accountRepository.findByAccountNumber(request.getAccountNumber())
+        final Account account = accountRepository.findById(UUID.fromString(request.getAccountId()))
                 .orElseThrow(() -> new EntityNotFoundException("Account not found"));
         account.setClosed(true);
         accountRepository.save(account);
     }
 
+    public void closeAccount(final UUID accountId) {
+        final Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
+        account.setClosed(true);
+        accountRepository.save(account);
+    }
     /*
     public AccountDto deposit(final TopUpRequest request, String accountId) {
         final Account account = accountRepository.findById(UUID.fromString(accountId))
@@ -106,7 +112,7 @@ public class AccountService {
             throw new EntityNotFoundException("Insufficient funds");
         }
         accountRepository.save(account);
-        final var accountTransactionDto = recordAccountTransaction(account, OperationType.TOP_UP, amount);
+        final var accountTransactionDto = recordAccountTransaction(account, OperationType.TOP_UP, amount, accountCurrency);
 
         transactionWebSocketController.sendTransactionUpdate(accountId, accountTransactionDto);
         return accountMapper.map(account);
@@ -145,7 +151,7 @@ public class AccountService {
             throw new EntityNotFoundException("Insufficient funds");
         }
         accountRepository.save(account);
-        final var accountTransactionDto = recordAccountTransaction(account, OperationType.WITHDRAW, amount);
+        final var accountTransactionDto = recordAccountTransaction(account, OperationType.WITHDRAW, amount, accountCurrency);
 
         transactionWebSocketController.sendTransactionUpdate(accountId, accountTransactionDto);
 
@@ -191,9 +197,9 @@ public class AccountService {
         accountRepository.saveAll(accounts);
     }
 
-    public List<AccountTransactionDto> getAccountHistory(final AccountNumberRequest request, final int pageSize, final int pageNumber) {
+    public List<AccountTransactionDto> getAccountHistory(final UUID accountId, final int pageSize, final int pageNumber) {
         final Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Order.desc("transactionDate")));
-        final Account account = accountRepository.findByAccountNumber(request.getAccountNumber())
+        final Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new EntityNotFoundException("Account not found"));
         return accountTransactionRepository.findByAccountId(account.getId(), pageable).stream()
                 .map(accountTransactionMapper::map)
@@ -278,13 +284,14 @@ public class AccountService {
         return new CreditPaymentResponseDTO(true, account.getBalance().toString());
     }
 
-    private AccountTransactionDto recordAccountTransaction(final Account account, final OperationType type, final BigDecimal amount) {
+    private AccountTransactionDto recordAccountTransaction(final Account account, final OperationType type, final BigDecimal amount, final CurrencyCode currencyCode) {
         final AccountTransaction tx = new AccountTransaction();
 
         tx.setAccount(account);
         tx.setTransactionType(type);
         tx.setAmount(amount);
         tx.setTransactionDate(LocalDateTime.now());
+        tx.setCurrencyCode(currencyCode);
 
         return accountTransactionMapper.map(accountTransactionRepository.save(tx));
     }
@@ -385,8 +392,8 @@ public class AccountService {
         accountRepository.save(fromAccount);
         accountRepository.save(toAccount);
 
-        recordAccountTransaction(fromAccount, OperationType.TRANSFER_OUTGOING, transferAmount);
-        recordAccountTransaction(toAccount, OperationType.TRANSFER_INCOMING, transferAmount);
+        recordAccountTransaction(fromAccount, OperationType.TRANSFER_OUTGOING, transferAmount, fromCurrency);
+        recordAccountTransaction(toAccount, OperationType.TRANSFER_INCOMING, transferAmount, toCurrency);
 
         return mapToDto(fromAccount);
     }
@@ -457,7 +464,7 @@ public class AccountService {
     public List<PaymentResponseDTO> getPayments(UUID loanId)
     {
         List<PaymentResponseDTO> result = new ArrayList<>();
-        CreditContract creditContract = creditContractRepository.findById(loanId)
+        CreditContract creditContract = creditContractRepository.findByCreditApprovedId(loanId)
                 .orElseThrow(() -> new RuntimeException("Credit contract not found"));
         List<CreditTransaction> successfulPayments = creditTransactionRepository.findByCreditContract(creditContract);
         for (CreditTransaction tx : successfulPayments) {

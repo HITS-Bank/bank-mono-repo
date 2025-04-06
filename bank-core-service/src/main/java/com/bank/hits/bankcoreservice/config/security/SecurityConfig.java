@@ -47,7 +47,7 @@ public class SecurityConfig {
                         .requestMatchers(ApiConstants.ACCOUNTS_BASE + "/*/list").hasRole(Role.EMPLOYEE.name())
                         .requestMatchers(ApiConstants.ACCOUNTS_BASE + "/*/top_up").authenticated()
                         .requestMatchers(ApiConstants.ACCOUNTS_BASE + "/*/withdraw").authenticated()
-                        .requestMatchers(ApiConstants.ACCOUNTS_BASE + "/operation_history").authenticated()
+                        .requestMatchers(ApiConstants.ACCOUNTS_BASE + "/*/operation_history").authenticated()
                         .requestMatchers(ApiConstants.ACCOUNTS_BASE + "/account/*").authenticated()
                         .requestMatchers(ApiConstants.ACCOUNTS_BASE + "/list").authenticated()
                         .requestMatchers(ApiConstants.ACCOUNTS_BASE + "/account").authenticated()

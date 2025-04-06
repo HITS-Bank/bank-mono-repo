@@ -12,7 +12,7 @@ public class ApiConstants {
     // Эндпоинты для работы со счетами
     // для клиентов
     public static final String CREATE_ACCOUNT = "/create"; // POST /accounts/create
-    public static final String CLOSE_ACCOUNT = "/close"; // POST /accounts/{accountId}/close
+    public static final String CLOSE_ACCOUNT = "/{accountId}/close"; // POST /accounts/{accountId}/close
 
     // для сотрудников
     public static final String BLOCK_CLIENT_ACCOUNTS = "/{clientId}/block"; // POST /accounts/{clientId}/block
@@ -22,7 +22,7 @@ public class ApiConstants {
     // Эндпоинты для работы с транзакциями
     public static final String TOP_UP = "/{accountId}/top_up"; // POST /accounts/deposit
     public static final String WITHDRAW = "/{accountId}/withdraw"; // POST /accounts/withdraw
-    public static final String ACCOUNT_HISTORY = "/operation_history"; // GET /accounts/{accountId}/history
+    public static final String ACCOUNT_HISTORY = "/{accountId}/operation_history"; // GET /accounts/{accountId}/history
 
 
 
