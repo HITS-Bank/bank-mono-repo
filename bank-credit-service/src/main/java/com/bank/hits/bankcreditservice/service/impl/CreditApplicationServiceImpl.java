@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Header;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -28,7 +27,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
@@ -108,6 +106,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         responseDTO.setTermInMonths(request.getTermInMonths());
         responseDTO.setBankAccountNumber(request.getBankAccountNumber());
         responseDTO.setBankAccountId(request.getBankAccountId());
+        responseDTO.setCurrencyCode(CurrencyCode.RUB);
 
         BigDecimal monthlyPayment = calculateMonthlyPayment(request.getAmount(), tariff.getInterestRate(), request.getTermInMonths());
         responseDTO.setPaymentAmount(monthlyPayment);
@@ -120,6 +119,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
 
         CreditHistory creditHistory = new CreditHistory();
         creditHistory.setId(UUID.randomUUID());
+        responseDTO.setId(creditHistory.getId());
         creditHistory.setTariffId(tariff.getId());
         creditHistory.setClientUuid(UUID.fromString(clientUuid));
         creditHistory.setTotalAmount(request.getAmount());
