@@ -458,7 +458,7 @@ public class AccountService {
     public List<PaymentResponseDTO> getPayments(UUID loanId)
     {
         List<PaymentResponseDTO> result = new ArrayList<>();
-        CreditContract creditContract = creditContractRepository.findById(loanId)
+        CreditContract creditContract = creditContractRepository.findByCreditApprovedId(loanId)
                 .orElseThrow(() -> new RuntimeException("Credit contract not found"));
         List<CreditTransaction> successfulPayments = creditTransactionRepository.findByCreditContract(creditContract);
         for (CreditTransaction tx : successfulPayments) {
