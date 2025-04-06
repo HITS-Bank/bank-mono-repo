@@ -3,6 +3,9 @@ package com.bank.hits.bankcoreservice.core.service;
 import com.bank.hits.bankcoreservice.api.dto.CurrencyCode;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -18,7 +21,8 @@ public class CurrencyConversionService {
     public CurrencyConversionService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
-    private static final String EXCHANGE_API = "https://api.exchangerate.host/convert?from={from}&to={to}&amount={amount}";
+    private static final String EXCHANGE_API =
+            "https://api.apilayer.com/exchangerates_data/convert?from={from}&to={to}&amount={amount}";
 
     public BigDecimal convert(CurrencyCode from, CurrencyCode to, BigDecimal amount) {
         if (from == to) return amount;
@@ -29,7 +33,18 @@ public class CurrencyConversionService {
                 "amount", amount.toPlainString()
         );
 
-        ResponseEntity<JsonNode> response = restTemplate.getForEntity(EXCHANGE_API, JsonNode.class, params);
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("apikey", "dqz0Papq7Qsm9QkwwvDOoLNJIIQPXZAR");
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<JsonNode> response = restTemplate.exchange(
+                EXCHANGE_API,
+                HttpMethod.GET,
+                entity,
+                JsonNode.class,
+                params
+        );
 
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
             BigDecimal result = new BigDecimal(response.getBody().get("result").asText());
