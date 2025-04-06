@@ -28,6 +28,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
+
 @Slf4j
 @Service
 @AllArgsConstructor
@@ -41,6 +42,8 @@ public class AccountService {
     private final ClientRepository clientRepository;
     private final AccountNumberGenerator accountNumberGenerator;
     private final AccountTransactionMapper accountTransactionMapper;
+
+    private static final String MASTER_ACCOUNT_NUMBER = "00000000000000000001";
     private final AccountMapper accountMapper;
     private final OverduePaymentRepository overduePaymentRepository;
 
@@ -238,6 +241,7 @@ public class AccountService {
      * Списываем указанную сумму с баланса счёта и уменьшаем остаток по кредитному договору.
      */
     public CreditPaymentResponseDTO repayCredit(final CreditRepaymentRequest repaymentRequest) {
+        log.info("Зашли в оплату");
         if (repaymentRequest.getCreditAmount() == null || new BigDecimal(repaymentRequest.getCreditAmount()).compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Repayment amount must be greater than zero");
         }
@@ -245,25 +249,31 @@ public class AccountService {
         final CreditContract creditContract = creditContractRepository.findById(repaymentRequest.getCreditContractId())
                 .orElseThrow(() -> new EntityNotFoundException("Credit contract not found"));
 
+        log.info("creditContract: {}", creditContract);
         final Account account = accountRepository.findById(creditContract.getAccount().getId())
                 .orElseThrow(() -> new EntityNotFoundException("Account not found"));
 
+        log.info("account: {}", account);
         if (account.isClosed()) {
             throw new IllegalStateException("Account is closed");
         }
 
+        log.info("Над amount");
         final var amount = new BigDecimal(repaymentRequest.getCreditAmount());
         if (account.getBalance().subtract(amount).compareTo(BigDecimal.ZERO) < 0) {
+            log.info("Просрочен, начало обработки");
             OverduePayment overduePayment = new OverduePayment();
             overduePayment.setCreditContractId(creditContract.getCreditContractId());
             overduePayment.setPaymentAmount(amount);
             overduePayment.setPaymentDate(LocalDateTime.now());
             overduePaymentRepository.save(overduePayment);
+            log.info("Просрочен, обработано");
             return new CreditPaymentResponseDTO(false, account.getBalance().toString());
         }
 
+        log.info("Можем оплатить:");
 
-        final String MASTER_ACCOUNT_NUMBER = "MASTER-0000000001";
+
         Account masterAccount = accountRepository.findByAccountNumber(MASTER_ACCOUNT_NUMBER)
                 .orElseThrow(() -> new IllegalStateException("Master account not found"));
 

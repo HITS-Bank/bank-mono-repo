@@ -46,10 +46,10 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
 
     @Override
     @Transactional
-    public boolean processPayment(CreditPaymentRequestDTO request, PaymentStatus paymentStatus) throws Exception {
-        CreditHistory creditHistory = creditHistoryRepository.findByNumber(request.getLoanNumber())
+    public boolean processPayment(UUID loanId,CreditPaymentRequestDTO request, PaymentStatus paymentStatus) throws Exception {
+        CreditHistory creditHistory = creditHistoryRepository.findById(loanId)
                 .orElseThrow(() -> new RuntimeException("Кредит с таким номером не найден"));
-        String correlationId = sendPaymentRequest(creditHistory.getId(), request.getPaymentAmount(), paymentStatus);
+        String correlationId = sendPaymentRequest(creditHistory.getId(), request.getAmount(), paymentStatus);
         Semaphore semaphore = new Semaphore(0);
         semaphoreMap.put(correlationId, new SemaphoreResponsePair(semaphore, null));
         boolean acquired = semaphore.tryAcquire(30, TimeUnit.SECONDS);
@@ -125,10 +125,9 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
                 log.info("Обрабатываем автоматический платеж для кредита {}", credit.getNumber());
 
                 CreditPaymentRequestDTO request = new CreditPaymentRequestDTO();
-                request.setLoanNumber(credit.getNumber());
-                request.setPaymentAmount(credit.getMonthlyPayment());
+                request.setAmount(credit.getMonthlyPayment());
 
-                boolean success = processPayment(request, PaymentStatus.PLANNED);
+                boolean success = processPayment(credit.getId(),request, PaymentStatus.PLANNED);
 
                 if (success) {
                     log.info("Платёж для кредита {} успешно проведён", credit.getNumber());
