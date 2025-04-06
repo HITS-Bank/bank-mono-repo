@@ -1,5 +1,6 @@
 package com.bank.hits.bankcoreservice.api.dto;
 
+import com.bank.hits.bankcoreservice.api.enums.CurrencyCode;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -20,4 +21,5 @@ public class AccountTransactionDto {
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     @JsonProperty("executedAt")
     private LocalDateTime executedAt;
+    private CurrencyCode currencyCode;
 }

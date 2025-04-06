@@ -73,10 +73,10 @@ public class AccountController {
     }
 
     @PostMapping(value = ApiConstants.ACCOUNT_HISTORY, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<AccountTransactionDto>> getAccountHistory(@RequestBody final AccountNumberRequest request,
+    public ResponseEntity<List<AccountTransactionDto>> getAccountHistory(@PathVariable("accountId") final UUID accountId,
                                                                          @RequestParam final int pageSize,
                                                                          @RequestParam final int pageNumber) {
-        return ResponseEntity.ok(accountService.getAccountHistory(request, pageSize, pageNumber - 1));
+        return ResponseEntity.ok(accountService.getAccountHistory(accountId, pageSize, pageNumber - 1));
     }
 
     @PostMapping(value = ApiConstants.TRANSFER, produces = MediaType.APPLICATION_JSON_VALUE)

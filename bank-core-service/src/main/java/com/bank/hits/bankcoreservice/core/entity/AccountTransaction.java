@@ -1,6 +1,10 @@
 package com.bank.hits.bankcoreservice.core.entity;
 
+import com.bank.hits.bankcoreservice.api.dto.CurrencyCode;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -34,4 +38,8 @@ public class AccountTransaction {
     private BigDecimal amount;
     private OperationType transactionType;
     private LocalDateTime transactionDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "currency_code")
+    private CurrencyCode currencyCode;
 }
