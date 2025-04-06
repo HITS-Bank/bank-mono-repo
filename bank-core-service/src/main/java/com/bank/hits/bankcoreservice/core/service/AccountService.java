@@ -484,7 +484,7 @@ public class AccountService {
         for (CreditTransaction tx : successfulPayments) {
             PaymentResponseDTO dto = new PaymentResponseDTO();
             dto.setId(tx.getTransactionId());
-            dto.setStatus(tx.getPaymentStatus().toString());
+            dto.setStatus(tx.getPaymentStatus() != null ? tx.getPaymentStatus().toString() : null);
             dto.setDateTime(tx.getPaymentDate());
             dto.setAmount(tx.getPaymentAmount());
             dto.setCurrencyCode("RUB");
