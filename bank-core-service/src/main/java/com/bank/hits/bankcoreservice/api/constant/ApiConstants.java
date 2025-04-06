@@ -12,7 +12,7 @@ public class ApiConstants {
     // Эндпоинты для работы со счетами
     // для клиентов
     public static final String CREATE_ACCOUNT = "/create"; // POST /accounts/create
-    public static final String CLOSE_ACCOUNT = "/close"; // POST /accounts/{accountId}/close
+    public static final String CLOSE_ACCOUNT = "/{accountId}/close"; // POST /accounts/{accountId}/close
 
     // для сотрудников
     public static final String BLOCK_CLIENT_ACCOUNTS = "/{clientId}/block"; // POST /accounts/{clientId}/block

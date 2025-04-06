@@ -38,8 +38,10 @@ public class AccountController {
     }
 
     @PostMapping(value = ApiConstants.CLOSE_ACCOUNT, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Void> closeAccount(@RequestBody final CloseAccountRequest request) {
-        accountService.closeAccount(request);
+    public ResponseEntity<Void> closeAccount(@PathVariable("accountId") final UUID accountId,
+                                             HttpServletRequest httpServletRequest) {
+        final UUID clientId = UUID.fromString(jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest)));
+        accountService.closeAccount(accountId, clientId);
         return ResponseEntity.ok().build();
     }
 
