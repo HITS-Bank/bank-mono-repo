@@ -1,5 +1,6 @@
 package com.bank.hits.bankcoreservice.core.service;
 
+import com.bank.hits.bankcoreservice.api.dto.CurrencyCode;
 import com.bank.hits.bankcoreservice.core.utils.AccountNumberGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +34,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class CreditService {
-    private final String MASTER_ACCOUNT_NUMBER = "MASTER-0000000001";
+    private final String MASTER_ACCOUNT_NUMBER = "00000000000000000001";
 
     private final CreditContractRepository creditContractRepository;
     private final CreditTransactionMapper creditTransactionMapper;
@@ -82,6 +83,7 @@ public class CreditService {
         final Account creditAccount = accountRepository.findByClientAndAccountType(client, AccountType.CREDIT)
                 .orElseGet(() -> createCreditAccount(client));
 
+        log.info("до masterAccount");
         Account masterAccount = accountRepository.findByAccountNumber(MASTER_ACCOUNT_NUMBER)
                 .orElseThrow(() -> new IllegalStateException("Master account not found"));
 
@@ -119,6 +121,7 @@ public class CreditService {
 
     private Account createCreditAccount(final Client client) {
         final Account newAccount = new Account();
+        newAccount.setCurrencyCode(CurrencyCode.RUB);
         newAccount.setClient(client);
         newAccount.setAccountType(AccountType.CREDIT);
         newAccount.setBalance(BigDecimal.ZERO);

@@ -62,19 +62,26 @@ public class ClientService {
         log.info("client - {}", client);
         final List<AccountDto> accountDtos = accountService.getAccountsByClientId(clientId);
         clientInfoDto.setAccounts(accountDtos);
+        log.info("после setAccounts");
 
         final List<AccountTransactionDto> accountTransactionDtos = accountService.getAccountTransactionsByClientId(clientId);
         clientInfoDto.setAccountTransactions(accountTransactionDtos);
+        log.info("после setAccountTransactions");
 
         final List<CreditContractDto> creditContractDtos = creditService.getCreditsByClientId(clientId);
         clientInfoDto.setCredits(creditContractDtos);
+        log.info("после setCredits");
 
         final List<CreditTransactionDto> creditContractTransactionDtos = creditService.getCreditContractTransactionsByClientId(clientId);
         clientInfoDto.setCreditTransactions(creditContractTransactionDtos);
+        log.info("после setCreditTransactions");
 
         clientInfoDto.setCreditRating(client.getCreditRating());
-        Optional<Account> masterAcc = accountRepository.findByAccountNumber("MASTER-0000000001");
+        log.info("перед masterAcc");
+        Optional<Account> masterAcc = accountRepository.findByAccountNumber("00000000000000000001");
+        log.info("перед masterAcc.get()");
         clientInfoDto.setMasterAccountAmount(masterAcc.get().getBalance());
+        log.info("после masterAcc.get()");
         log.info("getClientInfoForCredit - {}", clientInfoDto);
 
         return clientInfoDto;

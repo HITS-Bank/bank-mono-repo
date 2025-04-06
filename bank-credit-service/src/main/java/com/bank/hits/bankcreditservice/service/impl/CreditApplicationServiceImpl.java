@@ -146,7 +146,9 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
     @Override
     public UserLoansResponseDTO getUserLoans(String clientUuid, int pageSize, int pageNumber) {
         UUID uuid = UUID.fromString(clientUuid);
-        Page<CreditHistory> page = creditHistoryRepository.findByClientUuidAndRemainingDebtGreaterThan(uuid,BigDecimal.ZERO, PageRequest.of(pageNumber, pageSize));
+        log.info("uuid = " + uuid);
+        Page<CreditHistory> page = creditHistoryRepository.findByClientUuidAndRemainingDebtGreaterThan(uuid,BigDecimal.ZERO, PageRequest.of(pageNumber - 1, pageSize));
+        log.info("page = " + page);
 
         List<UserLoansResponseDTO.LoanDTO> loans = page.getContent().stream()
                 .map(this::convertToDTO)

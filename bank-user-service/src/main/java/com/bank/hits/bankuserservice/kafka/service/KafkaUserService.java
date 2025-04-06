@@ -47,7 +47,10 @@ public class KafkaUserService {
     }
 
     private void sendMessageWithCorrelationId(String topic, String correlationId, Object messageContent) throws JsonProcessingException {
-        ProducerRecord<String, String> record = new ProducerRecord<>(topic, objectMapper.writeValueAsString(messageContent));
+        log.info("messageContent: " + messageContent);
+        String result = objectMapper.writeValueAsString(messageContent);
+        log.info("result: " + result);
+        ProducerRecord<String, String> record = new ProducerRecord<>(topic, result);
         record.headers().add("correlation_id", correlationId.getBytes());
         kafkaTemplate.send(record);
     }
