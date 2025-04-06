@@ -26,7 +26,7 @@ public class ApiConstants {
 
 
 
-    public static final String GET_ACCOUNT = "/account/{accountId}";
+    public static final String GET_ACCOUNT = "/{accountId}";
     public static final String GET_ACCOUNTS = "/list";
     public static final String CREATE_CLIENT = "/client/create";
 

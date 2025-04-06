@@ -14,10 +14,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @AllArgsConstructor
@@ -52,18 +53,18 @@ public class CreditApplicationController {
     }
 
     @GetMapping("/loan/list")
-    public ResponseEntity<UserLoansResponseDTO> getUserLoans(
+    public ResponseEntity<List<UserLoansResponseDTO.LoanDTO>> getUserLoans(
             @RequestParam int pageSize,
             @RequestParam int pageNumber,
             HttpServletRequest httpServletRequest) {
 
         String clientUuid = jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest));
         UserLoansResponseDTO response = creditApplicationService.getUserLoans(clientUuid, pageSize, pageNumber);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(response.getLoans());
     }
 
     @GetMapping("/employee/loan/{userId}/list")
-    public ResponseEntity<UserLoansResponseDTO> getUserLoansFromEmployee(
+    public ResponseEntity<List<UserLoansResponseDTO.LoanDTO>> getUserLoansFromEmployee(
             HttpServletRequest httpServletRequest,
             @PathVariable String userId,
             @RequestParam int pageSize,
@@ -77,7 +78,7 @@ public class CreditApplicationController {
             throw new ForbiddenAccessException("Client is blocked");
         }
         UserLoansResponseDTO response = creditApplicationService.getUserLoans(userId, pageSize, pageNumber);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(response.getLoans());
     }
 
     @PostMapping("/loan/{loanId}/pay")

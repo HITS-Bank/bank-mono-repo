@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -59,7 +58,7 @@ public class AccountController {
 
     @PostMapping(value = ApiConstants.TOP_UP, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AccountDto> top_up(HttpServletRequest httpServletRequest,
-                                             @RequestParam final UUID accountId,
+                                             @PathVariable final UUID accountId,
                                              @RequestBody final ChangeBankAccountBalanceRequest changeBankAccountBalanceRequest) {
         final UUID clientId = UUID.fromString(jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest)));
         return ResponseEntity.ok(accountService.top_up(clientId, accountId, changeBankAccountBalanceRequest));
@@ -67,7 +66,7 @@ public class AccountController {
 
     @PostMapping(value = ApiConstants.WITHDRAW, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AccountDto> withdraw(HttpServletRequest httpServletRequest,
-                                               @RequestParam final UUID accountId,
+                                               @PathVariable final UUID accountId,
                                                @RequestBody final ChangeBankAccountBalanceRequest changeBankAccountBalanceRequest) {
         final UUID clientId = UUID.fromString(jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest)));
         return ResponseEntity.ok(accountService.withdraw(clientId, accountId, changeBankAccountBalanceRequest));
