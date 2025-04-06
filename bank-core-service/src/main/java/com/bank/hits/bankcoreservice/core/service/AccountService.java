@@ -428,6 +428,9 @@ public class AccountService {
         if(fromCurrency != toCurrency)
         {
             try{
+                log.info("fromCurrency = " + fromCurrency.toString());
+                log.info("toCurrency = " + toCurrency.toString());
+                log.info("originalAmount = " + originalAmount);
                 convertedAmount = conversionService.convert(fromCurrency, toCurrency, originalAmount);
             }
             catch (Exception e)

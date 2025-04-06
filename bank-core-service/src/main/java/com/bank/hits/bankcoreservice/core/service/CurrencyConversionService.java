@@ -2,6 +2,7 @@ package com.bank.hits.bankcoreservice.core.service;
 
 import com.bank.hits.bankcoreservice.api.dto.CurrencyCode;
 import com.fasterxml.jackson.databind.JsonNode;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -13,6 +14,7 @@ import org.springframework.web.client.RestTemplate;
 import java.math.BigDecimal;
 import java.util.Map;
 
+@Slf4j
 @Service
 public class CurrencyConversionService {
     private final RestTemplate restTemplate;
@@ -38,6 +40,7 @@ public class CurrencyConversionService {
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
+        log.info("до response");
         ResponseEntity<JsonNode> response = restTemplate.exchange(
                 EXCHANGE_API,
                 HttpMethod.GET,
@@ -45,6 +48,7 @@ public class CurrencyConversionService {
                 JsonNode.class,
                 params
         );
+        log.info("после response, body: " + response.getBody());
 
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
             BigDecimal result = new BigDecimal(response.getBody().get("result").asText());

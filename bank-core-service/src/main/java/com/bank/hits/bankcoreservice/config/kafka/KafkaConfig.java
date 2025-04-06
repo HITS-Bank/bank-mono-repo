@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
-import org.springframework.kafka.support.serializer.JsonDeserializer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -82,8 +81,8 @@ public class KafkaConfig {
     }
 
     @Bean
-    public NewTopic userCreditApproved() {
-        return new NewTopic("credit.approved", 1, (short) 1);
+    public NewTopic creditApprovedRequest() {
+        return new NewTopic("credit.approved.request", 1, (short) 1);
     }
 
     @Bean
@@ -159,6 +158,11 @@ public class KafkaConfig {
     @Bean
     public NewTopic employeeViewAccountTransactionHistoryResponse() {
         return new NewTopic("employee.view.account.transaction.history.response", 1, (short) 1);
+    }
+
+    @Bean
+    public NewTopic creditApprovedResponse() {
+        return new NewTopic("credit.approved.response", 1, (short) 1);
     }
 
 }
