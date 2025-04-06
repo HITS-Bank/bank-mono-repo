@@ -45,6 +45,7 @@ public class CreditService {
     private final KafkaProducerService kafkaProducerService;
     private final AccountNumberGenerator accountNumberGenerator;
 
+
     public List<CreditContractDto> getCreditsByClientId(final UUID clientId) {
         final var client = clientRepository.findByClientId(clientId)
                 .orElseThrow(() -> new RuntimeException("Client not found"));
@@ -76,14 +77,15 @@ public class CreditService {
                         return clientRepository.findByClientId(creditApprovedDto.getClientId()).orElseThrow();
                     }
                 });
+        log.info("client id : {}",client.getClientId());
 
         final Account creditAccount = accountRepository.findByClientAndAccountType(client, AccountType.CREDIT)
                 .orElseGet(() -> createCreditAccount(client));
 
-        final String MASTER_ACCOUNT_NUMBER = "MASTER-0000000001";
         Account masterAccount = accountRepository.findByAccountNumber(MASTER_ACCOUNT_NUMBER)
                 .orElseThrow(() -> new IllegalStateException("Master account not found"));
 
+        log.info("Мастер аккаунт найден");
         final BigDecimal approvedAmount = creditApprovedDto.getApprovedAmount();
 
         if (masterAccount.getBalance().compareTo(approvedAmount) < 0) {

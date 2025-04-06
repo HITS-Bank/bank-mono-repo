@@ -63,6 +63,7 @@ public class AccountEventConsumer {
         log.info("Received credit.create event: {}", record.value());
         try {
             CreditApprovedDto creditApprovedDto = objectMapper.readValue(record.value(), CreditApprovedDto.class);
+            log.info("creditApproveDTO: {}", creditApprovedDto);
             creditService.processCreditApproval(creditApprovedDto);
             log.info("Credit created successfully for client {}", creditApprovedDto.getClientId());
         } catch (Exception e) {

@@ -244,6 +244,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
 
             String message = objectMapper.writeValueAsString(approvedDto);
             ProducerRecord<String, String> record = new ProducerRecord<>(creditApprovedTopic, message);
+            log.info("record подтверждения кредита: {}", record);
             kafkaTemplate.send(record);
             log.info("Сообщение о подтверждении кредита отправлено в Kafka: {}", message);
         } catch (JsonProcessingException e) {
