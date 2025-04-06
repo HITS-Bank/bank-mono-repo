@@ -103,6 +103,9 @@ public class AccountService {
         BigDecimal convertedAmount;
         if(inputCurrency != accountCurrency) {
             try {
+                log.info("inputCurrency: {}", inputCurrency);
+                log.info("accountCurrency: {}", accountCurrency);
+                log.info("amount: {}", amount);
                 convertedAmount = conversionService.convert(inputCurrency, accountCurrency, amount);
             } catch (Exception ex) {
                 throw new RuntimeException("Error during currency conversion");
@@ -139,6 +142,9 @@ public class AccountService {
         BigDecimal convertedAmount;
         if(inputCurrency != accountCurrency) {
             try {
+                log.info("inputCurrency: {}", inputCurrency);
+                log.info("accountCurrency: {}", accountCurrency);
+                log.info("amount: {}", amount);
                 convertedAmount = conversionService.convert(inputCurrency, accountCurrency, amount);
             } catch (Exception ex) {
                 throw new RuntimeException("Error during currency conversion");
