@@ -58,7 +58,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
     @Value("${kafka.topics.core-information.response}")
     private String creditClientInfoResponseTopic;
 
-    @Value("${kafka.topics.approve}")
+    @Value("${kafka.topics.approve.request}")
     private String creditApprovedTopic;
 
     @Override
@@ -119,6 +119,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         responseDTO.setCurrentDebt(request.getAmount().add(totalPayment.subtract(request.getAmount())));
 
         CreditHistory creditHistory = new CreditHistory();
+        creditHistory.setId(UUID.randomUUID());
         creditHistory.setTariffId(tariff.getId());
         creditHistory.setClientUuid(UUID.fromString(clientUuid));
         creditHistory.setTotalAmount(request.getAmount());
@@ -137,12 +138,13 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         if (!acquired2) {
             throw new RuntimeException("Timeout waiting for client info response");
         }
-        log.info("Получен ответ");
-        SemaphoreResponsePair pair2 = semaphoreMap.remove(correlationId);
+        log.info("Получен ответ перед pair2");
+        SemaphoreResponsePair pair2 = semaphoreMap.remove(correlationId2);
+        log.info("pair2 response: " + pair2.getResponse());
         if (pair2 == null || pair2.getResponse() == null) {
             throw new RuntimeException("No valid response received for client info");
         }
-        boolean approveCredit = objectMapper.readValue(pair.getResponse(), boolean.class);
+        boolean approveCredit = objectMapper.readValue(pair2.getResponse(), boolean.class);
         log.info("approveCredit - {}", approveCredit);
         if(!approveCredit)
         {
@@ -255,6 +257,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         String correlationId = UUID.randomUUID().toString();
         try {
             CreditApprovedDTO approvedDto = new CreditApprovedDTO();
+            log.info("creditId = " + creditHistory.getId());
             approvedDto.setCreditId(creditHistory.getId());
             approvedDto.setClientId(creditHistory.getClientUuid());
             approvedDto.setApprovedAmount(creditHistory.getTotalAmount());
@@ -269,6 +272,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
             log.info("record подтверждения кредита: {}", record);
             kafkaTemplate.send(record);
             log.info("Сообщение о подтверждении кредита отправлено в Kafka: {}", message);
+            semaphoreMap.put(correlationId, new SemaphoreResponsePair(new Semaphore(0), null));
         } catch (JsonProcessingException e) {
             log.error("Ошибка при сериализации CreditApprovedDto", e);
         }

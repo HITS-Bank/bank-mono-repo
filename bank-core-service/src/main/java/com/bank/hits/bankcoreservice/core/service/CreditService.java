@@ -115,6 +115,7 @@ public class CreditService {
             creditContractTransactionRepository.save(transaction);
 
             creditAccount.setBalance(creditAccount.getBalance().add(creditContract.getCreditAmount()));
+            log.info("Перед accountRepository.save(creditAccount)");
             accountRepository.save(creditAccount);
             kafkaProducerService.sendCreditApproved(true,correlationId);
             kafkaProducerService.sendCreditAccountCreatedEvent(creditContract, creditAccount);

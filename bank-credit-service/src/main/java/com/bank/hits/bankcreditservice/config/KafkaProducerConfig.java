@@ -41,9 +41,15 @@ public class KafkaProducerConfig {
     }
 
     @Bean
-    public NewTopic userAccountCreateRequest3() {
-        return new NewTopic("credit.approved", 1, (short) 1);
+    public NewTopic creditApprovedRequest() {
+        return new NewTopic("credit.approved.request", 1, (short) 1);
     }
+
+    @Bean
+    public NewTopic creditApprovedResponse() {
+        return new NewTopic("credit.approved.response", 1, (short) 1);
+    }
+
     @Bean
     public NewTopic userAccountCreateRequest4() {
         return new NewTopic("credit.payment.request", 1, (short) 1);
