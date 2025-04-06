@@ -106,6 +106,7 @@ public class CreditService {
             creditContract.setClient(client);
             creditContract = creditContractRepository.save(creditContract);
 
+            /*
             final CreditTransaction transaction = new CreditTransaction();
             transaction.setCreditContract(creditContract);
             transaction.setCreditContractId(creditContract.getCreditContractId());
@@ -113,6 +114,8 @@ public class CreditService {
             transaction.setPaymentDate(LocalDateTime.now());
             transaction.setTransactionType(CreditTransactionType.CREDIT_DEPOSIT);
             creditContractTransactionRepository.save(transaction);
+
+             */
 
             creditAccount.setBalance(creditAccount.getBalance().add(creditContract.getCreditAmount()));
             log.info("Перед accountRepository.save(creditAccount)");
