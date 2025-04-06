@@ -88,11 +88,13 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
             record.headers().add("correlation_id", correlationId.getBytes());
             kafkaTemplate.send(record);
             log.info("Отправлен запрос на оплату кредита: {}", message);
+            semaphoreMap.put(correlationId, new SemaphoreResponsePair(new Semaphore(0), null));
         } catch (JsonProcessingException e) {
             log.error("Ошибка при сериализации CreditPaymentProcessingDTO", e);
         }
         return correlationId;
     }
+
 
     @KafkaListener(topics = "${kafka.topics.credit-payment.response}", groupId = "creditPaymentGroup")
     public void receivePaymentResponse(ConsumerRecord<String, String> record) {
