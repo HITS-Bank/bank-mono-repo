@@ -347,7 +347,7 @@ public class AccountService {
     }
 
     private void validateTransfer(final Client client, final Account source, final Account target, final String amountStr) {
-        if (!client.getId().equals(target.getId())) {
+        if (!client.getId().equals(target.getClient().getClientId())) {
             throw new IllegalArgumentException("Account does not belong to the specified client");
         }
 
