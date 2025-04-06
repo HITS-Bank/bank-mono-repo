@@ -155,6 +155,7 @@ public class AccountEventConsumer {
             CreditRepaymentRequest repaymentRequest = objectMapper.readValue(record.value(), CreditRepaymentRequest.class);
             final UUID correlationId = parseCorrelationId(record);
             if (correlationId == null) { return;}
+            log.info("creditContractId пришел: {}", repaymentRequest.getCreditContractId());
             final CreditPaymentResponseDTO response = accountService.repayCredit(repaymentRequest);
             kafkaProducerService.sendCreditPaymentResponse(response, correlationId);
             log.info("Credit repayment processed for application {}", repaymentRequest.getCreditContractId());

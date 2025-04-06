@@ -81,6 +81,7 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
             paymentDTO.setCreditContractId(creditId);
             paymentDTO.setEnrollmentDate(LocalDateTime.now());
             paymentDTO.setPaymentStatus(paymentStatus);
+            log.info("creditContractID: {} ", paymentDTO.getCreditContractId());
             String message = objectMapper.writeValueAsString(paymentDTO);
             log.info("message при отправке оплаты: {}", message);
             ProducerRecord<String, String> record = new ProducerRecord<>(creditPaymentRequestTopic, message);
