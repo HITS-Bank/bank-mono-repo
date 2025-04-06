@@ -471,6 +471,7 @@ public class AccountService {
         dto.setAccountNumber(account.getAccountNumber());
         dto.setClosed(account.isClosed());
         dto.setBlocked(account.isBlocked());
+        dto.setCurrencyCode(account.getCurrencyCode().toString());
         return dto;
     }
 
