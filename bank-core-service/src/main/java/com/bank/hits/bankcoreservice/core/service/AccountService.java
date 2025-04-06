@@ -118,7 +118,7 @@ public class AccountService {
             throw new EntityNotFoundException("Insufficient funds");
         }
         accountRepository.save(account);
-        final var accountTransactionDto = recordAccountTransaction(account, OperationType.TOP_UP, amount, accountCurrency);
+        final var accountTransactionDto = recordAccountTransaction(account, OperationType.TOP_UP, amount, inputCurrency);
 
         transactionWebSocketController.sendTransactionUpdate(accountId, accountTransactionDto);
         return accountMapper.map(account);
@@ -160,7 +160,7 @@ public class AccountService {
             throw new EntityNotFoundException("Insufficient funds");
         }
         accountRepository.save(account);
-        final var accountTransactionDto = recordAccountTransaction(account, OperationType.WITHDRAW, amount, accountCurrency);
+        final var accountTransactionDto = recordAccountTransaction(account, OperationType.WITHDRAW, amount, inputCurrency);
 
         transactionWebSocketController.sendTransactionUpdate(accountId, accountTransactionDto);
 
@@ -252,7 +252,7 @@ public class AccountService {
             throw new IllegalArgumentException("Repayment amount must be greater than zero");
         }
 
-        final CreditContract creditContract = creditContractRepository.findById(repaymentRequest.getCreditContractId())
+        final CreditContract creditContract = creditContractRepository.findByCreditApprovedId(repaymentRequest.getCreditContractId())
                 .orElseThrow(() -> new EntityNotFoundException("Credit contract not found"));
 
         log.info("creditContract: {}", creditContract);
@@ -409,7 +409,7 @@ public class AccountService {
         accountRepository.save(toAccount);
 
         recordAccountTransaction(fromAccount, OperationType.TRANSFER_OUTGOING, transferAmount, fromCurrency);
-        recordAccountTransaction(toAccount, OperationType.TRANSFER_INCOMING, transferAmount, toCurrency);
+        recordAccountTransaction(toAccount, OperationType.TRANSFER_INCOMING, convertedAmount, toCurrency);
 
         return mapToDto(fromAccount);
     }
