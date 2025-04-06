@@ -69,12 +69,7 @@ public class AccountService {
         accountRepository.save(account);
     }
 
-    public void closeAccount(final UUID accountId, final UUID clientId) {
-        final Client client = clientRepository.findById(clientId)
-                .orElseThrow(() -> new EntityNotFoundException("Client not found"));
-        if (client.isBlocked()) {
-            throw new RuntimeException("Client is blocked");
-        }
+    public void closeAccount(final UUID accountId) {
         final Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new EntityNotFoundException("Account not found"));
         account.setClosed(true);
