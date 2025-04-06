@@ -8,10 +8,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor(force = true)
 @AllArgsConstructor
-public class TopUpRequest {
+public class ChangeBankAccountBalanceRequest {
+    @JsonProperty("currencyCode")
+    private final CurrencyCode currencyCode;
     @JsonProperty("amount")
     private final String amount;
-
-    @JsonProperty("currencyCode")
-    private CurrencyCode currencyCode;
 }

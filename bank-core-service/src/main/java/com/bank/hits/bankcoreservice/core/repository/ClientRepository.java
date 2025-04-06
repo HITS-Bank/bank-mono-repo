@@ -1,10 +1,8 @@
 package com.bank.hits.bankcoreservice.core.repository;
 
-import jakarta.persistence.LockModeType;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import com.bank.hits.bankcoreservice.core.entity.Client;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 

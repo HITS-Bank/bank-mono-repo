@@ -14,5 +14,5 @@ import java.util.UUID;
 public interface CreditTransactionRepository extends JpaRepository<CreditTransaction, UUID> {
     List<CreditTransaction> findByCreditContractIn(Collection<CreditContract> creditContracts);
 
-    List<CreditTransaction> findByCreditContractId(UUID creditContractId);
+    List<CreditTransaction> findByCreditContract(CreditContract creditContract);
 }

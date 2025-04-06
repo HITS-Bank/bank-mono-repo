@@ -22,8 +22,8 @@ public class MasterAccountInitializer {
     private final AccountRepository accountRepository;
     private final ClientRepository clientRepository;
 
-    private static final String MASTER_ACCOUNT_NUMBER = "MASTER-0000000001";
-    private static final UUID MASTER_CLIENT_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final String MASTER_ACCOUNT_NUMBER = "00000000000000000001";
+    private static final UUID MASTER_CLIENT_ID = UUID.randomUUID();
 
     @PostConstruct
     public void init() {

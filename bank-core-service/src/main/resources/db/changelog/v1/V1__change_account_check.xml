@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+    <changeSet id="V1__change_account_check.xml" author="pupov" context="structure">
+        <sql>
+            ALTER TABLE accounts DROP CONSTRAINT accounts_account_type_check;
+
+            ALTER TABLE accounts
+                ADD CONSTRAINT accounts_account_type_check
+                    CHECK (account_type IN ('CHECKING', 'CREDIT', 'MASTER'));
+
+        </sql>
+    </changeSet>
+</databaseChangeLog>

@@ -13,6 +13,7 @@ spring:
     driver-class-name: org.postgresql.Driver
   liquibase:
     enabled: false
+#    change-log: classpath:/db/changelog/changelog.xml
   jpa:
     hibernate:
       ddl-auto: update
@@ -30,9 +31,6 @@ spring:
     producer:
       bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:29092}
 
-logging:
-  liquibase:
-    change-log: classpath:db/changelog/changelog.xml
 
 springdoc:
   api-docs:
@@ -41,3 +39,13 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     enabled: true
+
+jwt:
+  auth:
+    converter:
+      resource-id: bank-rest-api
+      principle-attribute: preferred_username
+
+keycloak:
+  host-uri: http://keycloak:8080
+  mobile-app-host-uri: http://10.0.2.2:8080

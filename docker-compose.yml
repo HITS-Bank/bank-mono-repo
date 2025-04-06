@@ -46,6 +46,21 @@ services:
       networks:
         - network-local
 
+    postgresql-personalization:
+      image: postgres:15.7
+      container_name: postgresql-personalization
+      command: postgres -c 'max_connections=200'
+      environment:
+        POSTGRES_DB: personalization_db
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: 12345
+      ports:
+        - "5436:5432"
+      volumes:
+        - postgres-personalization:/var/lib/postgresql/data
+      networks:
+        - network-local
+
 
     redis:
       image: redis:latest
@@ -115,13 +130,14 @@ services:
         - zookeeper
       ports:
         - "9092:9092"
+        - "9093:9093"
       environment:
         KAFKA_BROKER_ID: 1
         KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:2181
-        KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
-        KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-        KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+        KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:9093
+        KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:9093
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+        KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
         KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       networks:
         - network-local
@@ -235,12 +251,35 @@ services:
         SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
         APP_PORT: 9447
 
+    personalization-app:
+      container_name: personalization-app
+      build:
+        context: .
+        dockerfile: ./Dockerfile
+        args:
+          JAR_FILE: "bank-personalization-service/build/libs/bank-personalization-service-0.0.1-SNAPSHOT.jar"
+          APP_PORT: 9448
+      depends_on:
+        - postgresql-personalization
+        - keycloak
+      ports:
+        - "9448:9448"
+      networks:
+        - network-local
+      environment:
+        USER_DATABASE_URL: jdbc:postgresql://postgresql-personalization:5432/personalization_db
+        SPRING_DATASOURCE_USERNAME: postgres
+        SPRING_DATASOURCE_PASSWORD: 12345
+        APP_PORT: 9448
+
 volumes:
     postgres-core:
       driver: local
     postgres-credit:
       driver: local
     postgres-user:
+      driver: local
+    postgres-personalization:
       driver: local
     kafka_data:
       driver: local
