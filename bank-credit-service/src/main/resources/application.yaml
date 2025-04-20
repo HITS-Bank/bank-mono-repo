@@ -45,7 +45,9 @@ kafka:
     core-information:
       request: credit.client.info.request
       response: credit.client.info.response
-    approve: credit.approved
+    approve:
+      request: credit.approved.request
+      response: credit.approved.response
     credit-payment:
       request: credit.payment.request
       response: credit.payment.response
@@ -63,3 +65,21 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     enabled: true
+
+#keycloak:
+#  host-uri: http://keycloak:8080
+#  realm-name: bank
+#  bank-client-id: bank-rest-api
+#  admin-client-id: admin-service
+#  admin-client-secret: jbExY5dbcv6Iiss3s5mnG30586pEgeVr
+#  mobile-app-host-uri: http://10.0.2.2:8080
+
+jwt:
+  auth:
+    converter:
+      resource-id: bank-rest-api
+      principle-attribute: preferred_username
+
+keycloak:
+  host-uri: http://keycloak:8080
+  mobile-app-host-uri: http://10.0.2.2:8080

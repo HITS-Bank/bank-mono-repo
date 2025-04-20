@@ -1,7 +1,10 @@
 package com.bank.hits.bankcoreservice.api.rest;
 
 import com.bank.hits.bankcoreservice.api.constant.ApiConstants;
+import com.bank.hits.bankcoreservice.api.dto.ClientInfoDto;
 import com.bank.hits.bankcoreservice.api.dto.CreditRatingResponseDTO;
+import com.bank.hits.bankcoreservice.config.JwtUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +24,7 @@ import java.util.UUID;
 public class ClientController {
 
     private final ClientService clientService;
+
 
     // create client
     @PostMapping(value = ApiConstants.CREATE_CLIENT, produces = MediaType.APPLICATION_JSON_VALUE)

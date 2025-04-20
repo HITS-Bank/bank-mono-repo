@@ -1,5 +1,6 @@
 package com.bank.hits.bankcoreservice.core.service;
 
+import com.bank.hits.bankcoreservice.api.dto.CurrencyCode;
 import com.bank.hits.bankcoreservice.core.utils.AccountNumberGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +11,6 @@ import com.bank.hits.bankcoreservice.api.dto.CreditApprovedDto;
 import com.bank.hits.bankcoreservice.api.dto.CreditContractDto;
 import com.bank.hits.bankcoreservice.api.dto.CreditTransactionDto;
 import com.bank.hits.bankcoreservice.api.enums.AccountType;
-import com.bank.hits.bankcoreservice.api.enums.CreditTransactionType;
 import com.bank.hits.bankcoreservice.config.service.KafkaProducerService;
 import com.bank.hits.bankcoreservice.core.entity.Account;
 import com.bank.hits.bankcoreservice.core.entity.Client;
@@ -33,7 +33,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class CreditService {
-    private final String MASTER_ACCOUNT_NUMBER = "MASTER-0000000001";
+    private final String MASTER_ACCOUNT_NUMBER = "00000000000000000001";
 
     private final CreditContractRepository creditContractRepository;
     private final CreditTransactionMapper creditTransactionMapper;
@@ -44,6 +44,7 @@ public class CreditService {
     private final AccountRepository accountRepository;
     private final KafkaProducerService kafkaProducerService;
     private final AccountNumberGenerator accountNumberGenerator;
+
 
     public List<CreditContractDto> getCreditsByClientId(final UUID clientId) {
         final var client = clientRepository.findByClientId(clientId)
@@ -65,57 +66,72 @@ public class CreditService {
     }
 
     @Transactional
-    public void processCreditApproval(final CreditApprovedDto creditApprovedDto) {
-        log.info("Processing credit approval for client {}", creditApprovedDto.getClientId());
+    public void processCreditApproval(final CreditApprovedDto creditApprovedDto, UUID correlationId) {
+        try {
+            log.info("Processing credit approval for client {}", creditApprovedDto.getClientId());
 
-        final Client client = clientRepository.findByClientId(creditApprovedDto.getClientId())
-                .orElseGet(() -> {
-                    try {
-                        return clientRepository.insertIfNotExists(creditApprovedDto.getClientId()).get();
-                    } catch (DataIntegrityViolationException e) {
-                        return clientRepository.findByClientId(creditApprovedDto.getClientId()).orElseThrow();
-                    }
-                });
+            final Client client = clientRepository.findByClientId(creditApprovedDto.getClientId())
+                    .orElseGet(() -> {
+                        try {
+                            return clientRepository.insertIfNotExists(creditApprovedDto.getClientId()).get();
+                        } catch (DataIntegrityViolationException e) {
+                            return clientRepository.findByClientId(creditApprovedDto.getClientId()).orElseThrow();
+                        }
+                    });
+            log.info("client id : {}", client.getClientId());
 
-        final Account creditAccount = accountRepository.findByClientAndAccountType(client, AccountType.CREDIT)
-                .orElseGet(() -> createCreditAccount(client));
+            final Account creditAccount = accountRepository.findById(creditApprovedDto.getAccountId())
+                    .orElseGet(() -> createCreditAccount(client));
 
-        final String MASTER_ACCOUNT_NUMBER = "MASTER-0000000001";
-        Account masterAccount = accountRepository.findByAccountNumber(MASTER_ACCOUNT_NUMBER)
-                .orElseThrow(() -> new IllegalStateException("Master account not found"));
+            log.info("до masterAccount");
+            Account masterAccount = accountRepository.findByAccountNumber(MASTER_ACCOUNT_NUMBER)
+                    .orElseThrow(() -> new IllegalStateException("Master account not found"));
 
-        final BigDecimal approvedAmount = creditApprovedDto.getApprovedAmount();
+            log.info("Мастер аккаунт найден");
+            final BigDecimal approvedAmount = creditApprovedDto.getApprovedAmount();
 
-        if (masterAccount.getBalance().compareTo(approvedAmount) < 0) {
-            throw new IllegalStateException("Недостаточно средств на мастер-счете");
+            if (masterAccount.getBalance().compareTo(approvedAmount) < 0) {
+                throw new IllegalStateException("Недостаточно средств на мастер-счете");
+            }
+            masterAccount.setBalance(masterAccount.getBalance().subtract(approvedAmount));
+            accountRepository.save(masterAccount);
+
+            CreditContract creditContract = new CreditContract();
+            creditContract.setCreditApprovedId(creditApprovedDto.getCreditId());
+            creditContract.setCreditAmount(creditApprovedDto.getApprovedAmount());
+            creditContract.setRemainingAmount(creditApprovedDto.getApprovedAmount());
+            creditContract.setStartDate(LocalDateTime.now());
+            creditContract.setAccount(creditAccount);
+            creditContract.setClient(client);
+            creditContract = creditContractRepository.save(creditContract);
+
+            /*
+            final CreditTransaction transaction = new CreditTransaction();
+            transaction.setCreditContract(creditContract);
+            transaction.setCreditContractId(creditContract.getCreditContractId());
+            transaction.setPaymentAmount(creditApprovedDto.getApprovedAmount());
+            transaction.setPaymentDate(LocalDateTime.now());
+            transaction.setTransactionType(CreditTransactionType.CREDIT_DEPOSIT);
+            creditContractTransactionRepository.save(transaction);
+
+             */
+
+            creditAccount.setBalance(creditAccount.getBalance().add(creditContract.getCreditAmount()));
+            log.info("Перед accountRepository.save(creditAccount)");
+            accountRepository.save(creditAccount);
+            kafkaProducerService.sendCreditApproved(true,correlationId);
+            kafkaProducerService.sendCreditAccountCreatedEvent(creditContract, creditAccount);
         }
-        masterAccount.setBalance(masterAccount.getBalance().subtract(approvedAmount));
-        accountRepository.save(masterAccount);
-
-        CreditContract creditContract = new CreditContract();
-        creditContract.setCreditApprovedId(creditApprovedDto.getCreditId());
-        creditContract.setCreditAmount(creditApprovedDto.getApprovedAmount());
-        creditContract.setRemainingAmount(creditApprovedDto.getApprovedAmount());
-        creditContract.setStartDate(LocalDateTime.now());
-        creditContract.setAccount(creditAccount);
-        creditContract.setClient(client);
-        creditContract = creditContractRepository.save(creditContract);
-
-        final CreditTransaction transaction = new CreditTransaction();
-        transaction.setCreditContract(creditContract);
-        transaction.setPaymentAmount(creditApprovedDto.getApprovedAmount());
-        transaction.setPaymentDate(LocalDateTime.now());
-        transaction.setTransactionType(CreditTransactionType.CREDIT_DEPOSIT);
-        creditContractTransactionRepository.save(transaction);
-
-        creditAccount.setBalance(creditAccount.getBalance().add(creditContract.getCreditAmount()));
-        accountRepository.save(creditAccount);
-
-        kafkaProducerService.sendCreditAccountCreatedEvent(creditContract, creditAccount);
+        catch (Exception e)
+        {
+            log.info("Внутренняя ошибка выдачи кредита: {} ", e.getMessage());
+            kafkaProducerService.sendCreditApproved(false,correlationId);
+        }
     }
 
     private Account createCreditAccount(final Client client) {
         final Account newAccount = new Account();
+        newAccount.setCurrencyCode(CurrencyCode.RUB);
         newAccount.setClient(client);
         newAccount.setAccountType(AccountType.CREDIT);
         newAccount.setBalance(BigDecimal.ZERO);

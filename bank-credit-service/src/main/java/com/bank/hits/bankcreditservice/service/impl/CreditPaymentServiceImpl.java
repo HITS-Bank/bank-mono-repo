@@ -46,10 +46,10 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
 
     @Override
     @Transactional
-    public boolean processPayment(CreditPaymentRequestDTO request, PaymentStatus paymentStatus) throws Exception {
-        CreditHistory creditHistory = creditHistoryRepository.findByNumber(request.getLoanNumber())
+    public boolean processPayment(UUID loanId,CreditPaymentRequestDTO request, PaymentStatus paymentStatus) throws Exception {
+        CreditHistory creditHistory = creditHistoryRepository.findById(loanId)
                 .orElseThrow(() -> new RuntimeException("Кредит с таким номером не найден"));
-        String correlationId = sendPaymentRequest(creditHistory.getId(), request.getPaymentAmount(), paymentStatus);
+        String correlationId = sendPaymentRequest(creditHistory.getId(), request.getAmount(), paymentStatus, creditHistory.getRemainingDebt());
         Semaphore semaphore = new Semaphore(0);
         semaphoreMap.put(correlationId, new SemaphoreResponsePair(semaphore, null));
         boolean acquired = semaphore.tryAcquire(30, TimeUnit.SECONDS);
@@ -61,8 +61,9 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
             throw new RuntimeException("No valid response received for credit payment");
         }
 
+        log.info("responseDTO json: {}", pair.getResponse());
         CreditPaymentResponseDTO responseDTO = objectMapper.readValue(pair.getResponse(), CreditPaymentResponseDTO.class);
-        log.info("responseDTO:", responseDTO);
+        log.info("responseDTO: {}", responseDTO);
         if (responseDTO.isApproved()) {
             creditHistory.setRemainingDebt(creditHistory.getRemainingDebt().subtract(responseDTO.getApprovedAmount()));
             creditHistoryRepository.save(creditHistory);
@@ -72,7 +73,7 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
         }
     }
 
-    private String sendPaymentRequest(UUID creditId, BigDecimal amount, PaymentStatus paymentStatus) {
+    private String sendPaymentRequest(UUID creditId, BigDecimal amount, PaymentStatus paymentStatus, BigDecimal remainingAmount) {
         log.info("pay started");
         String correlationId = UUID.randomUUID().toString();
         try {
@@ -81,17 +82,22 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
             paymentDTO.setCreditContractId(creditId);
             paymentDTO.setEnrollmentDate(LocalDateTime.now());
             paymentDTO.setPaymentStatus(paymentStatus);
+            paymentDTO.setRemainingAmount(remainingAmount);
+            log.info("creditContractID: {} ", paymentDTO.getCreditContractId());
             String message = objectMapper.writeValueAsString(paymentDTO);
             log.info("message при отправке оплаты: {}", message);
             ProducerRecord<String, String> record = new ProducerRecord<>(creditPaymentRequestTopic, message);
             record.headers().add("correlation_id", correlationId.getBytes());
             kafkaTemplate.send(record);
             log.info("Отправлен запрос на оплату кредита: {}", message);
+            semaphoreMap.put(correlationId, new SemaphoreResponsePair(new Semaphore(0), null));
+            log.info("CORRELATION_ID: {}", correlationId);
         } catch (JsonProcessingException e) {
             log.error("Ошибка при сериализации CreditPaymentProcessingDTO", e);
         }
         return correlationId;
     }
+
 
     @KafkaListener(topics = "${kafka.topics.credit-payment.response}", groupId = "creditPaymentGroup")
     public void receivePaymentResponse(ConsumerRecord<String, String> record) {
@@ -104,6 +110,7 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
         String correlationId = new String(header.value());
         String response = record.value();
 
+        log.info("ПРИШЁЛ CORRELATION_ID {}", correlationId);
         SemaphoreResponsePair pair = semaphoreMap.get(correlationId);
         if (pair != null) {
             pair.setResponse(response);
@@ -125,10 +132,9 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
                 log.info("Обрабатываем автоматический платеж для кредита {}", credit.getNumber());
 
                 CreditPaymentRequestDTO request = new CreditPaymentRequestDTO();
-                request.setLoanNumber(credit.getNumber());
-                request.setPaymentAmount(credit.getMonthlyPayment());
+                request.setAmount(credit.getMonthlyPayment());
 
-                boolean success = processPayment(request, PaymentStatus.PLANNED);
+                boolean success = processPayment(credit.getId(),request, PaymentStatus.PLANNED);
 
                 if (success) {
                     log.info("Платёж для кредита {} успешно проведён", credit.getNumber());

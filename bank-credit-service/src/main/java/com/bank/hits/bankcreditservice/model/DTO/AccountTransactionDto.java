@@ -19,4 +19,5 @@ public class AccountTransactionDto {
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     @JsonProperty("executedAt")
     private LocalDateTime executedAt;
+    private CurrencyCode currencyCode;
 }

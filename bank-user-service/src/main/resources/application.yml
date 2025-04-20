@@ -44,13 +44,6 @@ jwt:
       resource-id: bank-rest-api
       principle-attribute: preferred_username
 
-keycloak:
-  host-uri: http://keycloak:8080
-  realm-name: bank
-  bank-client-id: bank-rest-api
-  admin-client-id: admin-service
-  admin-client-secret: ooenBUduUqgYtZTvmxNnMfx2ZvCWuQM9
-  mobile-app-host-uri: http://10.0.2.2:8080
 
 server:
   port: ${APP_PORT:9447}
@@ -62,3 +55,11 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     enabled: true
+
+keycloak:
+  host-uri: http://keycloak:8080
+  realm-name: bank
+  bank-client-id: bank-rest-api
+  admin-client-id: admin-service
+  admin-client-secret: 9ppG4Ww9xHzIvdMGlvqLm5QPvbTPPeqp
+  mobile-app-host-uri: http://10.0.2.2:8080

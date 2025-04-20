@@ -7,11 +7,13 @@ import com.bank.hits.bankcoreservice.core.entity.OverduePayment;
 import com.bank.hits.bankcoreservice.core.repository.AccountRepository;
 import com.bank.hits.bankcoreservice.core.repository.ClientRepository;
 import com.bank.hits.bankcoreservice.core.repository.OverduePaymentRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class CreditRatingService {
     private final OverduePaymentRepository overduePaymentRepository;
@@ -48,6 +50,8 @@ public class CreditRatingService {
         int currentRating = client.getCreditRating();
         int newRating = currentRating + ratingChange;
         client.setCreditRating(newRating);
+        log.info("Дошли до сохранения рейтинга в БД");
         clientRepository.save(client);
+        log.info("Сохранили рейтинг в БД");
     }
 }

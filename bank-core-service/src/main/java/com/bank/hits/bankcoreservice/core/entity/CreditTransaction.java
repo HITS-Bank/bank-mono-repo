@@ -23,6 +23,7 @@ public class CreditTransaction {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID transactionId;
 
+    private UUID creditContractId;
     @ManyToOne
     @JoinColumn(name = "credit_id", nullable = false)
     private CreditContract creditContract;

@@ -28,6 +28,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
+
 @Slf4j
 @Service
 @AllArgsConstructor
@@ -41,6 +42,8 @@ public class AccountService {
     private final ClientRepository clientRepository;
     private final AccountNumberGenerator accountNumberGenerator;
     private final AccountTransactionMapper accountTransactionMapper;
+
+    private static final String MASTER_ACCOUNT_NUMBER = "00000000000000000001";
     private final AccountMapper accountMapper;
     private final OverduePaymentRepository overduePaymentRepository;
 
@@ -63,13 +66,32 @@ public class AccountService {
     }
 
     public void closeAccount(final CloseAccountRequest request) {
-        final Account account = accountRepository.findByAccountNumber(request.getAccountNumber())
+        final Account account = accountRepository.findById(UUID.fromString(request.getAccountId()))
                 .orElseThrow(() -> new EntityNotFoundException("Account not found"));
         account.setClosed(true);
         accountRepository.save(account);
     }
 
+    public void closeAccount(final UUID accountId) {
+        final Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
+        account.setClosed(true);
+        accountRepository.save(account);
+    }
+    /*
+    public AccountDto deposit(final TopUpRequest request, String accountId) {
+        final Account account = accountRepository.findById(UUID.fromString(accountId))
+                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
+        if (account.isClosed()) {
+            throw new EntityNotFoundException("Account is closed");
+        }
+        if (account.isBlocked()) {
+            throw new EntityNotFoundException("Account is blocked");
+        }
+    }
 
+
+     */
 
     public AccountDto top_up(final UUID clientId, final UUID accountId, final ChangeBankAccountBalanceRequest request) {
         final Account account = validateInputDataAndReturnAccount(clientId, accountId);
@@ -81,6 +103,9 @@ public class AccountService {
         BigDecimal convertedAmount;
         if(inputCurrency != accountCurrency) {
             try {
+                log.info("inputCurrency: {}", inputCurrency);
+                log.info("accountCurrency: {}", accountCurrency);
+                log.info("amount: {}", amount);
                 convertedAmount = conversionService.convert(inputCurrency, accountCurrency, amount);
             } catch (Exception ex) {
                 throw new RuntimeException("Error during currency conversion");
@@ -93,21 +118,33 @@ public class AccountService {
             throw new EntityNotFoundException("Insufficient funds");
         }
         accountRepository.save(account);
-        final var accountTransactionDto = recordAccountTransaction(account, OperationType.TOP_UP, amount);
+        final var accountTransactionDto = recordAccountTransaction(account, OperationType.TOP_UP, amount, inputCurrency);
 
         transactionWebSocketController.sendTransactionUpdate(accountId, accountTransactionDto);
         return accountMapper.map(account);
     }
 
-    public AccountDto withdraw(final UUID clientId, final UUID accountId, final ChangeBankAccountBalanceRequest request) {
-        final Account account = validateInputDataAndReturnAccount(clientId, accountId);
+    public AccountDto withdraw(final WithdrawRequest request, final UUID accountId) {
+        final Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
+        if (account.isClosed()) {
+            throw new EntityNotFoundException("Account is closed");
+        }
+        if (account.isBlocked()) {
+            throw new EntityNotFoundException("Account is blocked");
+        }
 
+    //public AccountDto withdraw(final UUID clientId, final UUID accountId, final ChangeBankAccountBalanceRequest request) {
+       // final Account account = validateInputDataAndReturnAccount(clientId, accountId);
         final var inputCurrency = request.getCurrencyCode();
         final var accountCurrency = account.getCurrencyCode();
         final var amount = new BigDecimal(request.getAmount());
         BigDecimal convertedAmount;
         if(inputCurrency != accountCurrency) {
             try {
+                log.info("inputCurrency: {}", inputCurrency);
+                log.info("accountCurrency: {}", accountCurrency);
+                log.info("amount: {}", amount);
                 convertedAmount = conversionService.convert(inputCurrency, accountCurrency, amount);
             } catch (Exception ex) {
                 throw new RuntimeException("Error during currency conversion");
@@ -123,7 +160,7 @@ public class AccountService {
             throw new EntityNotFoundException("Insufficient funds");
         }
         accountRepository.save(account);
-        final var accountTransactionDto = recordAccountTransaction(account, OperationType.WITHDRAW, amount);
+        final var accountTransactionDto = recordAccountTransaction(account, OperationType.WITHDRAW, amount, inputCurrency);
 
         transactionWebSocketController.sendTransactionUpdate(accountId, accountTransactionDto);
 
@@ -169,9 +206,9 @@ public class AccountService {
         accountRepository.saveAll(accounts);
     }
 
-    public List<AccountTransactionDto> getAccountHistory(final AccountNumberRequest request, final int pageSize, final int pageNumber) {
+    public List<AccountTransactionDto> getAccountHistory(final UUID accountId, final int pageSize, final int pageNumber) {
         final Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Order.desc("transactionDate")));
-        final Account account = accountRepository.findByAccountNumber(request.getAccountNumber())
+        final Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new EntityNotFoundException("Account not found"));
         return accountTransactionRepository.findByAccountId(account.getId(), pageable).stream()
                 .map(accountTransactionMapper::map)
@@ -210,32 +247,42 @@ public class AccountService {
      * Списываем указанную сумму с баланса счёта и уменьшаем остаток по кредитному договору.
      */
     public CreditPaymentResponseDTO repayCredit(final CreditRepaymentRequest repaymentRequest) {
+        log.info("Зашли в оплату");
         if (repaymentRequest.getCreditAmount() == null || new BigDecimal(repaymentRequest.getCreditAmount()).compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Repayment amount must be greater than zero");
         }
 
-        final CreditContract creditContract = creditContractRepository.findById(repaymentRequest.getCreditContractId())
+        final CreditContract creditContract = creditContractRepository.findByCreditApprovedId(repaymentRequest.getCreditContractId())
                 .orElseThrow(() -> new EntityNotFoundException("Credit contract not found"));
 
+        log.info("creditContract: {}", creditContract);
         final Account account = accountRepository.findById(creditContract.getAccount().getId())
                 .orElseThrow(() -> new EntityNotFoundException("Account not found"));
 
+        log.info("account: {}", account);
         if (account.isClosed()) {
             throw new IllegalStateException("Account is closed");
         }
 
-        final var amount = new BigDecimal(repaymentRequest.getCreditAmount());
+        log.info("Над amount");
+        var amount = new BigDecimal(repaymentRequest.getCreditAmount());
+        if (amount.compareTo(repaymentRequest.getRemainingAmount()) > 0) {
+            amount = repaymentRequest.getRemainingAmount();
+        }
         if (account.getBalance().subtract(amount).compareTo(BigDecimal.ZERO) < 0) {
+            log.info("Просрочен, начало обработки");
             OverduePayment overduePayment = new OverduePayment();
             overduePayment.setCreditContractId(creditContract.getCreditContractId());
             overduePayment.setPaymentAmount(amount);
             overduePayment.setPaymentDate(LocalDateTime.now());
             overduePaymentRepository.save(overduePayment);
-            return new CreditPaymentResponseDTO(false, account.getBalance().toString());
+            log.info("Просрочен, обработано");
+            return new CreditPaymentResponseDTO(false, account.getBalance());
         }
 
+        log.info("Можем оплатить:");
 
-        final String MASTER_ACCOUNT_NUMBER = "MASTER-0000000001";
+
         Account masterAccount = accountRepository.findByAccountNumber(MASTER_ACCOUNT_NUMBER)
                 .orElseThrow(() -> new IllegalStateException("Master account not found"));
 
@@ -245,24 +292,30 @@ public class AccountService {
         account.setBalance(account.getBalance().subtract(amount));
         accountRepository.save(account);
         recordCreditTransaction(creditContract, CreditTransactionType.CREDIT_REPAYMENT_AUTO, amount, repaymentRequest.getPaymentStatus());
+        var transaction = recordAccountTransaction(account, OperationType.LOAN_PAYMENT, amount, CurrencyCode.RUB);
 
-        creditContract.setRemainingAmount(creditContract.getRemainingAmount().max(BigDecimal.ZERO));
+        transactionWebSocketController.sendTransactionUpdate(account.getId(), transaction);
+
+        creditContract.setRemainingAmount(creditContract.getRemainingAmount().subtract(amount).max(BigDecimal.ZERO));
         creditContractRepository.save(creditContract);
+        log.info("Credit contract remaining amount {}", creditContract.getRemainingAmount());
 
         if (creditContract.getRemainingAmount().compareTo(BigDecimal.ZERO) == 0) {
+            log.info("Зашли в изменение кредитного рейтинга");
             Client client = account.getClient();
             creditRatingService.updateCreditRating(client, creditContract);
         }
-        return new CreditPaymentResponseDTO(true, account.getBalance().toString());
+        return new CreditPaymentResponseDTO(true, amount);
     }
 
-    private AccountTransactionDto recordAccountTransaction(final Account account, final OperationType type, final BigDecimal amount) {
+    private AccountTransactionDto recordAccountTransaction(final Account account, final OperationType type, final BigDecimal amount, final CurrencyCode currencyCode) {
         final AccountTransaction tx = new AccountTransaction();
 
         tx.setAccount(account);
         tx.setTransactionType(type);
         tx.setAmount(amount);
         tx.setTransactionDate(LocalDateTime.now());
+        tx.setCurrencyCode(currencyCode);
 
         return accountTransactionMapper.map(accountTransactionRepository.save(tx));
     }
@@ -271,6 +324,7 @@ public class AccountService {
         final CreditTransaction tx = new CreditTransaction();
 
         tx.setCreditContract(creditContract);
+        tx.setCreditContractId(creditContract.getCreditContractId());
         tx.setTransactionType(type);
         tx.setPaymentAmount(amount);
         tx.setPaymentDate(LocalDateTime.now());
@@ -300,10 +354,7 @@ public class AccountService {
         return accounts.stream().map(accountMapper::map).toList();
     }
 
-    private void validateTransfer(final Client client, final Account source, final Account target, final String amountStr) {
-        if (!client.getId().equals(target.getId())) {
-            throw new IllegalArgumentException("Account does not belong to the specified client");
-        }
+    private void validateTransfer(final Account source, final Account target, final String amountStr) {
 
         if (source.isClosed() || target.isClosed()) {
             throw new IllegalStateException("One of the accounts is closed");
@@ -334,17 +385,17 @@ public class AccountService {
 
         final Account fromAccount = accountRepository.findById(request.getSenderAccountId())
                 .orElseThrow(() -> new RuntimeException("Sender account not found"));
-        final Account toAccount = accountRepository.findById(request.getReceiverAccountId())
+        final Account toAccount = accountRepository.findByAccountNumber(request.getReceiverAccountNumber())
                 .orElseThrow(() -> new RuntimeException("Recipient account not found"));
 
         final BigDecimal transferAmount = new BigDecimal(request.getTransferAmount());
 
-        validateTransfer(client, fromAccount, toAccount, request.getTransferAmount());
+        validateTransfer(fromAccount, toAccount, request.getTransferAmount());
 
         final CurrencyCode fromCurrency = fromAccount.getCurrencyCode();
         final CurrencyCode toCurrency = toAccount.getCurrencyCode();
         final BigDecimal originalAmount = new BigDecimal(request.getTransferAmount());
-        BigDecimal convertedAmount = null;
+        BigDecimal convertedAmount;
         if(fromCurrency != toCurrency)
         {
             try{
@@ -354,6 +405,8 @@ public class AccountService {
             {
                 throw new RuntimeException("Error during currency conversion");
             }
+        } else {
+            convertedAmount = originalAmount;
         }
 
         fromAccount.setBalance(fromAccount.getBalance().subtract(originalAmount));
@@ -362,8 +415,10 @@ public class AccountService {
         accountRepository.save(fromAccount);
         accountRepository.save(toAccount);
 
-        recordAccountTransaction(fromAccount, OperationType.TRANSFER_OUTGOING, transferAmount);
-        recordAccountTransaction(toAccount, OperationType.TRANSFER_INCOMING, transferAmount);
+        final var fromTransaction = recordAccountTransaction(fromAccount, OperationType.TRANSFER_OUTGOING, transferAmount, fromCurrency);
+        final var toTransaction = recordAccountTransaction(toAccount, OperationType.TRANSFER_INCOMING, convertedAmount, toCurrency);
+        transactionWebSocketController.sendTransactionUpdate(fromAccount.getId(), fromTransaction);
+        transactionWebSocketController.sendTransactionUpdate(toAccount.getId(), toTransaction);
 
         return mapToDto(fromAccount);
     }
@@ -379,7 +434,7 @@ public class AccountService {
         final Account fromAccount = accountRepository.findById(request.getSenderAccountId())
                 .orElseThrow(() -> new RuntimeException("Sender account not found"));
 
-        final Account toAccount = accountRepository.findById(request.getReceiverAccountId())
+        final Account toAccount = accountRepository.findByAccountNumber(request.getReceiverAccountNumber())
                 .orElseThrow(() -> new RuntimeException("Recipient account not found"));
 
         final TransferInfo transferInfo = new TransferInfo();
@@ -405,12 +460,17 @@ public class AccountService {
         if(fromCurrency != toCurrency)
         {
             try{
+                log.info("fromCurrency = " + fromCurrency.toString());
+                log.info("toCurrency = " + toCurrency.toString());
+                log.info("originalAmount = " + originalAmount);
                 convertedAmount = conversionService.convert(fromCurrency, toCurrency, originalAmount);
             }
             catch (Exception e)
             {
                 throw new RuntimeException("Error during currency conversion");
             }
+        } else {
+            convertedAmount = originalAmount;
         }
 
         transferInfo.setTransferAmountAfterConversion(String.valueOf(convertedAmount));
@@ -425,25 +485,27 @@ public class AccountService {
         dto.setAccountNumber(account.getAccountNumber());
         dto.setClosed(account.isClosed());
         dto.setBlocked(account.isBlocked());
+        dto.setCurrencyCode(account.getCurrencyCode().toString());
         return dto;
     }
 
     public List<PaymentResponseDTO> getPayments(UUID loanId)
     {
         List<PaymentResponseDTO> result = new ArrayList<>();
-        CreditContract creditContract = creditContractRepository.findById(loanId)
+        CreditContract creditContract = creditContractRepository.findByCreditApprovedId(loanId)
                 .orElseThrow(() -> new RuntimeException("Credit contract not found"));
         List<CreditTransaction> successfulPayments = creditTransactionRepository.findByCreditContract(creditContract);
+        log.info("SuccessfulPayments: {}", successfulPayments);
         for (CreditTransaction tx : successfulPayments) {
             PaymentResponseDTO dto = new PaymentResponseDTO();
             dto.setId(tx.getTransactionId());
-            dto.setStatus(tx.getPaymentStatus().toString());
+            dto.setStatus(tx.getPaymentStatus() != null ? tx.getPaymentStatus().toString() : null);
             dto.setDateTime(tx.getPaymentDate());
             dto.setAmount(tx.getPaymentAmount());
             dto.setCurrencyCode("RUB");
             result.add(dto);
         }
-        List<OverduePayment> overduePayments = overduePaymentRepository.findByCreditContractId(loanId);
+        List<OverduePayment> overduePayments = overduePaymentRepository.findByCreditContractId(creditContract.getCreditContractId());
         for (OverduePayment op : overduePayments) {
             PaymentResponseDTO dto = new PaymentResponseDTO();
             dto.setId(op.getId());
@@ -456,3 +518,4 @@ public class AccountService {
         return result;
     }
 }
+

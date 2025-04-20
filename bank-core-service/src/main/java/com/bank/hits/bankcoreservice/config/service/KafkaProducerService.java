@@ -41,6 +41,20 @@ public class KafkaProducerService {
         }
     }
 
+    public void sendCreditApproved(final boolean approved, UUID correlationId) {
+        try {
+            final String message = objectMapper.writeValueAsString(approved);
+            log.info("message = {}", message);
+            ProducerRecord<String, String> record = new ProducerRecord<>("credit.approved.response", message);
+            record.headers().add("correlation_id",(String.valueOf(correlationId).getBytes()));
+            record.headers().add("timeoutExpire", "30".getBytes());
+            kafkaTemplate.send(record);
+            log.info("Sent CREDIT_AAPROVED event: {}", message);
+        } catch (final Exception e) {
+            log.error("Error sending CREDIT_APRROVED event", e);
+        }
+    }
+
     public void sendCreditAccountCreatedEvent(final CreditContract creditContract, final Account creditAccount) {
         try {
             final CreditAccountCreatedResponse event = new CreditAccountCreatedResponse(
@@ -59,8 +73,11 @@ public class KafkaProducerService {
     public void sendCreditPaymentResponse(final CreditPaymentResponseDTO response, final UUID correlationId) {
         try {
             final String message = objectMapper.writeValueAsString(response);
-            kafkaTemplate.send("credit.payment.response", message);
-            log.info("Sent CREDIT_PAYMENT_RESPONSE event: {}", response);
+            ProducerRecord<String, String> record = new ProducerRecord<>("credit.payment.response", message);
+            record.headers().add("correlation_id",(String.valueOf(correlationId).getBytes()));
+            record.headers().add("timeoutExpire", "30".getBytes());
+            kafkaTemplate.send(record);
+            log.info("Sent CREDIT_PAYMENT_RESPONSE event: {}", message);
         } catch (final Exception e) {
             log.error("Error sending CREDIT_PAYMENT_RESPONSE event", e);
         }

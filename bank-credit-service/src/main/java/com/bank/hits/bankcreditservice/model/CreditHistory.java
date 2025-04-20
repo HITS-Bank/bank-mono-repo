@@ -16,18 +16,16 @@ import java.util.UUID;
 public class CreditHistory {
 
     @Id
-    @GeneratedValue(generator = "UUID")
-    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
     @Column(name = "id", updatable = false, nullable = false, columnDefinition = "UUID")
     private UUID id;
 
     @Column(name = "tariff_id", nullable = false)
     private UUID tariffId;
 
-    @Column(name = "bankAccountNumber", nullable = false)
+    @Column(name = "bankAccountNumber", nullable = true)
     private String bankAccountNumber;
 
-    @Column(name = "bankAccountId", nullable = false)
+    @Column(name = "bankAccountId", nullable = true)
     private UUID bankAccountId;
 
     @Column(name = "number", nullable = false)

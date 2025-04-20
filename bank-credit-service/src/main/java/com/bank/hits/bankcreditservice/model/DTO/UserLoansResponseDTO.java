@@ -14,6 +14,9 @@ public class UserLoansResponseDTO {
     //private PageInfoDTO pageInfo;
     @Data
     public static class LoanDTO {
+
+        private UUID id;
+        private CurrencyCode currencyCode;
         private String number;
         private TariffDTO tariff;
         private BigDecimal amount;

@@ -32,9 +32,10 @@ public class MasterAccountInitializer {
             log.info("Мастер-счет уже существует: {}", MASTER_ACCOUNT_NUMBER);
             return;
         }
-
+        log.info("перед bankClient");
         Client bankClient = clientRepository.findByClientId(MASTER_CLIENT_ID)
                 .orElseGet(() -> {
+                    log.info("bankClient: сработал orElseGet");
                     Client newBankClient = new Client();
                     newBankClient.setClientId(MASTER_CLIENT_ID);
                     newBankClient.setCreditRating(0);
@@ -42,6 +43,7 @@ public class MasterAccountInitializer {
                     log.info("Создан клиент банка с ID {}", MASTER_CLIENT_ID);
                     return newBankClient;
                 });
+        log.info("после bankClient");
 
         Account masterAccount = new Account();
         masterAccount.setClient(bankClient);

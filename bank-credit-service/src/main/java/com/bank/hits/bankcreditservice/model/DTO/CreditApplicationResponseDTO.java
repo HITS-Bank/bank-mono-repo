@@ -8,6 +8,8 @@ import java.util.UUID;
 
 @Data
 public class CreditApplicationResponseDTO {
+    private UUID id;
+    private CurrencyCode currencyCode;
     private String number;
     private TariffDTO tariff;
     private BigDecimal amount;

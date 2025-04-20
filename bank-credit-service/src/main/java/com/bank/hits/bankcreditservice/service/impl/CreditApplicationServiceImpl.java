@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Header;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -28,7 +27,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
@@ -58,7 +56,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
     @Value("${kafka.topics.core-information.response}")
     private String creditClientInfoResponseTopic;
 
-    @Value("${kafka.topics.approve}")
+    @Value("${kafka.topics.approve.request}")
     private String creditApprovedTopic;
 
     @Override
@@ -84,7 +82,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         }
         CreditClientInfoResponseDTO clientInfo = objectMapper.readValue(pair.getResponse(), CreditClientInfoResponseDTO.class);
         log.info("clientInfo = {}", clientInfo);
-        boolean approved = true;
+        boolean approved = approveCredit(request,clientInfo);
         log.info("approved - {}", approved);
         if(!approved)
         {
@@ -108,6 +106,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         responseDTO.setTermInMonths(request.getTermInMonths());
         responseDTO.setBankAccountNumber(request.getBankAccountNumber());
         responseDTO.setBankAccountId(request.getBankAccountId());
+        responseDTO.setCurrencyCode(CurrencyCode.RUB);
 
         BigDecimal monthlyPayment = calculateMonthlyPayment(request.getAmount(), tariff.getInterestRate(), request.getTermInMonths());
         responseDTO.setPaymentAmount(monthlyPayment);
@@ -119,6 +118,8 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         responseDTO.setCurrentDebt(request.getAmount().add(totalPayment.subtract(request.getAmount())));
 
         CreditHistory creditHistory = new CreditHistory();
+        creditHistory.setId(UUID.randomUUID());
+        responseDTO.setId(creditHistory.getId());
         creditHistory.setTariffId(tariff.getId());
         creditHistory.setClientUuid(UUID.fromString(clientUuid));
         creditHistory.setTotalAmount(request.getAmount());
@@ -129,8 +130,27 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         creditHistory.setNumber(creditNumber);
         creditHistory.setBankAccountNumber(request.getBankAccountNumber());
         creditHistory.setBankAccountId(request.getBankAccountId());
+
+
+        String correlationId2 =  sendCreditApprovedEvent(creditHistory);
+        Semaphore semaphore2 = semaphoreMap.get(correlationId2).getSemaphore();
+        boolean acquired2 = semaphore2.tryAcquire(30, TimeUnit.SECONDS);
+        if (!acquired2) {
+            throw new RuntimeException("Timeout waiting for client info response");
+        }
+        log.info("Получен ответ перед pair2");
+        SemaphoreResponsePair pair2 = semaphoreMap.remove(correlationId2);
+        log.info("pair2 response: " + pair2.getResponse());
+        if (pair2 == null || pair2.getResponse() == null) {
+            throw new RuntimeException("No valid response received for client info");
+        }
+        boolean approveCredit = objectMapper.readValue(pair2.getResponse(), boolean.class);
+        log.info("approveCredit - {}", approveCredit);
+        if(!approveCredit)
+        {
+            throw new CreditCreationException("Не удалось получить кредит, попробуйте позже");
+        }
         creditHistoryRepository.save(creditHistory);
-        sendCreditApprovedEvent(creditHistory);
         return responseDTO;
     }
 
@@ -146,7 +166,9 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
     @Override
     public UserLoansResponseDTO getUserLoans(String clientUuid, int pageSize, int pageNumber) {
         UUID uuid = UUID.fromString(clientUuid);
-        Page<CreditHistory> page = creditHistoryRepository.findByClientUuidAndRemainingDebtGreaterThan(uuid,BigDecimal.ZERO, PageRequest.of(pageNumber, pageSize));
+        log.info("uuid = " + uuid);
+        Page<CreditHistory> page = creditHistoryRepository.findByClientUuidAndRemainingDebtGreaterThan(uuid,BigDecimal.ZERO, PageRequest.of(pageNumber - 1, pageSize));
+        log.info("page = " + page);
 
         List<UserLoansResponseDTO.LoanDTO> loans = page.getContent().stream()
                 .map(this::convertToDTO)
@@ -160,12 +182,12 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         return response;
     }
 
-    public UserLoansResponseDTO.LoanDTO getCreditByNumber(String number)
+    public UserLoansResponseDTO.LoanDTO getCreditById(UUID id)
     {
-        Optional<CreditHistory> credit = creditHistoryRepository.findByNumber(number);
+        Optional<CreditHistory> credit = creditHistoryRepository.findById(id);
         if(!credit.isPresent())
         {
-            throw new NoSuchElementException("Не удалось найти тариф с указанным номером");
+            throw new NoSuchElementException("Не удалось найти кредит с указанным id");
         }
         CreditHistory request = credit.get();
         /*
@@ -208,6 +230,8 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
 
     private UserLoansResponseDTO.LoanDTO convertToDTO(CreditHistory credit) {
         UserLoansResponseDTO.LoanDTO loanDTO = new UserLoansResponseDTO.LoanDTO();
+        loanDTO.setId(credit.getId());
+        loanDTO.setCurrencyCode(CurrencyCode.RUB);
         loanDTO.setNumber(credit.getNumber());
         loanDTO.setAmount(credit.getTotalAmount());
         loanDTO.setTermInMonths((int) credit.getEndDate().minusMonths(credit.getStartDate().getMonthValue()).getMonthValue());
@@ -231,10 +255,13 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         return loanDTO;
     }
 
-    private void sendCreditApprovedEvent(CreditHistory creditHistory) {
+    private String sendCreditApprovedEvent(CreditHistory creditHistory) {
+        String correlationId = UUID.randomUUID().toString();
         try {
             CreditApprovedDTO approvedDto = new CreditApprovedDTO();
+            log.info("creditId = " + creditHistory.getId());
             approvedDto.setCreditId(creditHistory.getId());
+            approvedDto.setAccountId(creditHistory.getBankAccountId());
             approvedDto.setClientId(creditHistory.getClientUuid());
             approvedDto.setApprovedAmount(creditHistory.getTotalAmount());
             approvedDto.setRemainingAmount(creditHistory.getRemainingDebt());
@@ -244,11 +271,15 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
 
             String message = objectMapper.writeValueAsString(approvedDto);
             ProducerRecord<String, String> record = new ProducerRecord<>(creditApprovedTopic, message);
+            record.headers().add("correlation_id", correlationId.getBytes());
+            log.info("record подтверждения кредита: {}", record);
             kafkaTemplate.send(record);
             log.info("Сообщение о подтверждении кредита отправлено в Kafka: {}", message);
+            semaphoreMap.put(correlationId, new SemaphoreResponsePair(new Semaphore(0), null));
         } catch (JsonProcessingException e) {
             log.error("Ошибка при сериализации CreditApprovedDto", e);
         }
+        return correlationId;
     }
 
     private BigDecimal calculateMonthlyPayment(BigDecimal amount, double interestRate, int months) {
@@ -299,7 +330,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
     private boolean hasOverdueCredits(List<CreditContractDto> credits) {
         LocalDateTime now = LocalDateTime.now();
         for (CreditContractDto credit : credits) {
-            if (credit.getEndDate().isBefore(now) && credit.getCreditRepaymentAmount().compareTo(BigDecimal.ZERO) > 0) {
+            if (credit.getCreditRepaymentAmount() != null && credit.getCreditRepaymentAmount().compareTo(BigDecimal.ZERO) > 0) {
                 return true; // Есть просроченные кредиты
             }
         }
@@ -361,6 +392,28 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
             log.warn("Не найден ожидающий поток для correlationId: " + correlationId);
         }
     }
+
+
+    @KafkaListener(topics = "${kafka.topics.approve.response}", groupId = "creditClientInfoGroup")
+    public void receiveCreditApproveResponse(ConsumerRecord<String, String> record) {
+        log.info("Получено сообщение одобрения кредита");
+        Header header = record.headers().lastHeader("correlation_id");
+        if (header == null) {
+            log.warn("Получен ответ без заголовка correlation_id");
+            return;
+        }
+        String correlationId = new String(header.value());
+        log.info("correlationId {}", correlationId);
+        String response = record.value();
+        SemaphoreResponsePair pair = semaphoreMap.get(correlationId);
+        if (pair != null) {
+            pair.setResponse(response);
+            pair.getSemaphore().release();
+        } else {
+            log.warn("Не найден ожидающий поток для correlationId: " + correlationId);
+        }
+    }
+
     private static class SemaphoreResponsePair {
         private Semaphore semaphore;
         private String response;
