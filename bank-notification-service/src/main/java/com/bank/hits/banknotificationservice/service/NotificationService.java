@@ -18,7 +18,7 @@ public class NotificationService {
         firebaseNotificationService.sendNotification(Optional.of(fcmToken), notification);
     }
 
-    public void broadcastToEmployees(NotificationEntity notification) {
+    public void broadcast(NotificationEntity notification) {
         firebaseNotificationService.sendNotification(Optional.empty(), notification);
     }
 }

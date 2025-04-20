@@ -30,7 +30,7 @@ public class AccountOperationsConsumer {
             notificationService.sendToClient(event.getUserId(), notification);
             log.info("Sent push notification to client with userId: {}", event.getUserId());
 
-            notificationService.broadcastToEmployees(notification);
+            notificationService.broadcast(notification);
             log.info("Sent broadcast push notification");
         } catch (Exception e) {
             log.error("Error processing operation event");
