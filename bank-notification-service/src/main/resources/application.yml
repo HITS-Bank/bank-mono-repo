@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: personalization_service
+
+  datasource:
+    url: ${USER_DATABASE_URL:jdbc:postgresql://localhost:5436/personalization}
+    username: myuser
+    password: mypassword
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+
+  sql:
+    init:
+      mode: always
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://keycloak:8080/realms/bank
+          jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG
+
+jwt:
+  auth:
+    converter:
+      resource-id: bank-rest-api
+      principle-attribute: preferred_username
+
+keycloak:
+  host-uri: http://keycloak:8080
+  mobile-app-host-uri: http://10.0.2.2:8080
+
+server:
+  port: ${APP_PORT:9448}
+
+springdoc:
+  api-docs:
+    path: /api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true

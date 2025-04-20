@@ -11,7 +11,22 @@ tags:
   - name: Loan
     description: Работа с кредитами
   - name: Personalization
+    description: Работа с персонализацией мобильных приложений
+  - name: Notification
+    description: Работа с уведомлениями
 paths:
+  /notification/fcm/register:
+    post:
+      tags:
+        - Notification
+      security:
+        - bearerAuth: []
+      description: Зарегистрировать Firebase Cloud Messaging токен пользователя
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterFcmRequest'
   /personalization/theme:
     post:
       tags:
@@ -1306,3 +1321,10 @@ components:
       enum:
         - CLIENT
         - EMPLOYEE
+    RegisterFcmRequest:
+      type: object
+      required:
+        - fcmToken
+      properties:
+        fcmToken:
+          type: string
