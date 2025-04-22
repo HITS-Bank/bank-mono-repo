@@ -21,6 +21,8 @@ import com.bank.hits.bankcoreservice.core.service.EmployeeService;
 
 import java.util.UUID;
 
+import static com.bank.hits.bankcoreservice.core.utils.ExceptionUtils.throwExceptionRandomly;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -62,6 +64,7 @@ public class AccountEventConsumer {
     public void handleCreditApproved(final ConsumerRecord<String, String> record) {
         log.info("Received credit.create event: {}", record.value());
         try {
+            throwExceptionRandomly();
             final UUID correlationId = parseCorrelationId(record);
             if(correlationId == null)
             {
@@ -132,6 +135,7 @@ public class AccountEventConsumer {
     public void handleClientInfoRequest(final ConsumerRecord<String, String> record) {
         log.info("Received client info request: {}", record.value());
         try {
+            throwExceptionRandomly();
             final UUID correlationId = parseCorrelationId(record);
             if (correlationId == null) { return;}
 
@@ -152,6 +156,7 @@ public class AccountEventConsumer {
     public void handleCreditRepayment(final ConsumerRecord<String, String> record) {
         log.info("record: {}", record.value());
         try {
+            throwExceptionRandomly();
             CreditRepaymentRequest repaymentRequest = objectMapper.readValue(record.value(), CreditRepaymentRequest.class);
             final UUID correlationId = parseCorrelationId(record);
             if (correlationId == null) { return;}

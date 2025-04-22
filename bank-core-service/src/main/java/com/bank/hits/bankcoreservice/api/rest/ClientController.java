@@ -1,10 +1,7 @@
 package com.bank.hits.bankcoreservice.api.rest;
 
 import com.bank.hits.bankcoreservice.api.constant.ApiConstants;
-import com.bank.hits.bankcoreservice.api.dto.ClientInfoDto;
 import com.bank.hits.bankcoreservice.api.dto.CreditRatingResponseDTO;
-import com.bank.hits.bankcoreservice.config.JwtUtils;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +15,8 @@ import com.bank.hits.bankcoreservice.core.service.ClientService;
 
 import java.util.UUID;
 
+import static com.bank.hits.bankcoreservice.core.utils.ExceptionUtils.throwExceptionRandomly;
+
 @RequiredArgsConstructor
 @RestController
 @RequestMapping(ApiConstants.ACCOUNTS_BASE)
@@ -29,11 +28,13 @@ public class ClientController {
     // create client
     @PostMapping(value = ApiConstants.CREATE_CLIENT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ClientDto> createClient(final ClientDto clientDto) {
+        throwExceptionRandomly();
         return ResponseEntity.ok(clientService.createClient(clientDto));
     }
 
     @GetMapping("/{userId}/rating")
     public CreditRatingResponseDTO getCreditRating(@PathVariable UUID userId) {
+        throwExceptionRandomly();
         return ResponseEntity.ok(clientService.getCreditRating(userId)).getBody();
     }
 

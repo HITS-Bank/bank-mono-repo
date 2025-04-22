@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.UUID;
 
+import static com.bank.hits.bankcreditservice.exception.ExceptionUtils.throwExceptionRandomly;
+
 @RestController
 @AllArgsConstructor
 @Slf4j
@@ -38,6 +40,7 @@ public class CreditApplicationController {
             @RequestBody CreditApplicationRequestDTO request,
             HttpServletRequest httpServletRequest
     ) throws Exception {
+        throwExceptionRandomly();
 
         String clientUuid = jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest));
         log.info("Запрос на создание кредита от пользователя {}", clientUuid);
@@ -58,6 +61,7 @@ public class CreditApplicationController {
             @RequestParam int pageSize,
             @RequestParam int pageNumber,
             HttpServletRequest httpServletRequest) {
+        throwExceptionRandomly();
 
         String clientUuid = jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest));
         UserLoansResponseDTO response = creditApplicationService.getUserLoans(clientUuid, pageSize, pageNumber);
@@ -70,6 +74,8 @@ public class CreditApplicationController {
             @PathVariable String userId,
             @RequestParam int pageSize,
             @RequestParam int pageNumber) throws Exception {
+        throwExceptionRandomly();
+
         String clientUuid = jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest));
         if (clientUuid == null) {
             throw new SecurityException("Invalid token");
@@ -84,6 +90,8 @@ public class CreditApplicationController {
 
     @PostMapping("/loan/{loanId}/pay")
     public ResponseEntity<String> payCredit(@PathVariable UUID loanId, @RequestBody CreditPaymentRequestDTO request) throws Exception {
+        throwExceptionRandomly();
+
         boolean success = creditPaymentService.processPayment(loanId,request, PaymentStatus.MANUAL);
         return success ? ResponseEntity.ok("Платёж успешно проведён") :
                 ResponseEntity.badRequest().body("Платёж не одобрен");
@@ -91,6 +99,8 @@ public class CreditApplicationController {
 
     @GetMapping("/loan/{loanId}")
     public ResponseEntity<UserLoansResponseDTO.LoanDTO> getloanById(@PathVariable UUID loanId) {
+        throwExceptionRandomly();
+
         UserLoansResponseDTO.LoanDTO credit = creditApplicationService.getCreditById(loanId);
         return ResponseEntity.ok(credit);
     }

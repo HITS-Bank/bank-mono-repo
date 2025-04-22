@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static com.bank.hits.bankuserservice.common.util.ExceptionUtils.throwExceptionRandomly;
+
 @RestController
 @RequestMapping("/users/employee/users")
 @RequiredArgsConstructor
@@ -29,6 +31,7 @@ public class EmployeeUserController {
             @Valid @RequestBody RegisterRequest request,
             HttpServletRequest httpServletRequest
     ) {
+        throwExceptionRandomly();
         String token = jwtUtils.extractAccessToken(httpServletRequest);
         userService.registerUser(token, request);
         return ResponseEntity.noContent().build();
@@ -39,6 +42,7 @@ public class EmployeeUserController {
             @PathVariable("userId") String userId,
             HttpServletRequest httpServletRequest
     ) throws JsonProcessingException {
+        throwExceptionRandomly();
         String token = jwtUtils.extractAccessToken(httpServletRequest);
         userService.banUser(token, userId);
         return ResponseEntity.noContent().build();
@@ -49,6 +53,7 @@ public class EmployeeUserController {
             @PathVariable("userId") String userId,
             HttpServletRequest httpServletRequest
     ) throws JsonProcessingException {
+        throwExceptionRandomly();
         String token = jwtUtils.extractAccessToken(httpServletRequest);
         userService.unbanUser(token, userId);
         return ResponseEntity.noContent().build();
@@ -62,6 +67,7 @@ public class EmployeeUserController {
             @RequestParam @Positive int pageNumber,
             HttpServletRequest httpServletRequest
     ) {
+        throwExceptionRandomly();
         String token = jwtUtils.extractAccessToken(httpServletRequest);
         UserListRequest request = new UserListRequest(role, nameQuery, pageSize, pageNumber);
         return ResponseEntity.ok(userService.getUserList(token, request));

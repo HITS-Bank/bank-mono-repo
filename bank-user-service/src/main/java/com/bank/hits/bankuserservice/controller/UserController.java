@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import static com.bank.hits.bankuserservice.common.util.ExceptionUtils.throwExceptionRandomly;
+
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
@@ -20,6 +22,7 @@ public class UserController {
     public ResponseEntity<UserDto> getSelfProfile(
             HttpServletRequest httpServletRequest
     ) {
+        throwExceptionRandomly();
         String token = jwtUtils.extractAccessToken(httpServletRequest);
         return ResponseEntity.ok(userService.getSelfUserProfile(token));
     }
