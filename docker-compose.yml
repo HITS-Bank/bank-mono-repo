@@ -61,6 +61,21 @@ services:
       networks:
         - network-local
 
+    postgresql-notification:
+      image: postgres:15.7
+      container_name: postgresql-notification
+      command: postgres -c 'max_connections=200'
+      environment:
+        POSTGRES_DB: notification_db
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: 12345
+      ports:
+        - "5437:5432"
+      volumes:
+        - postgres-notification:/var/lib/postgresql/data
+      networks:
+        - network-local
+
 
     redis:
       image: redis:latest
@@ -272,6 +287,27 @@ services:
         SPRING_DATASOURCE_PASSWORD: 12345
         APP_PORT: 9448
 
+    notification-app:
+      container_name: notification-app
+      build:
+        context: .
+        dockerfile: ./Dockerfile
+        args:
+          JAR_FILE: "bank-notification-service/build/libs/bank-notification-service-0.0.1-SNAPSHOT.jar"
+          APP_PORT: 9449
+      depends_on:
+        - postgresql-notification
+        - keycloak
+      ports:
+        - "9449:9449"
+      networks:
+        - network-local
+      environment:
+        USER_DATABASE_URL: jdbc:postgresql://postgresql-notification:5432/notification_db
+        SPRING_DATASOURCE_USERNAME: postgres
+        SPRING_DATASOURCE_PASSWORD: 12345
+        APP_PORT: 9449
+
 volumes:
     postgres-core:
       driver: local
@@ -280,6 +316,8 @@ volumes:
     postgres-user:
       driver: local
     postgres-personalization:
+      driver: local
+    postgres-notification:
       driver: local
     kafka_data:
       driver: local

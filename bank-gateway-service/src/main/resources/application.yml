@@ -18,6 +18,10 @@ spring:
           uri: http://personalization-app:9448
           predicates:
             - Path=/personalization/**
+        - id: bank-notification-service
+          uri: http://notification-app:9449
+          predicates:
+            - Path=/notification/**
 springdoc:
   api-docs:
     path: /api-docs

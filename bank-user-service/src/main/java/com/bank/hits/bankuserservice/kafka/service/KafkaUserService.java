@@ -28,7 +28,6 @@ public class KafkaUserService {
         sendMessageWithCorrelationId(topic, correlationId, message);
     }
 
-
     public void coreSendUserBanned(String userId) throws JsonProcessingException {
         final String topic = getTopicName(BAN_ACTION_TOPIC_PART);
         UserUUIDMessage message = new UserUUIDMessage(userId);

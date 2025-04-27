@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import com.bank.hits.bankuserservice.model.dto.UserDto;
 import com.bank.hits.bankuserservice.kafka.message.InformationAboutBlockingDTO;
 
+import static com.bank.hits.bankuserservice.common.util.ExceptionUtils.throwExceptionRandomly;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -26,6 +28,7 @@ public class KafkaListenerService {
 
     @KafkaListener(topics = "credit.user.info.request", groupId = "user-service-group")
     public void listenCreditUserInfoRequest(ConsumerRecord<String, String> record) throws JsonProcessingException {
+        throwExceptionRandomly();
         Header header = record.headers().lastHeader("correlation_id");
         if (header == null) {
             log.warn("Получено сообщение без заголовка correlation_id");

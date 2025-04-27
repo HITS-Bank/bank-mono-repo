@@ -2,6 +2,7 @@ package com.bank.hits.bankcreditservice.model.DTO;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -11,4 +12,5 @@ public class CreditRepaymentRequest {
     private String creditAmount;
     private LocalDateTime enrollmentDate;
     private PaymentStatus paymentStatus;
+    private BigDecimal remainingAmount;
 }

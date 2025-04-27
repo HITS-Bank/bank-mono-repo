@@ -77,6 +77,7 @@ public class ClientService {
         log.info("после setCreditTransactions");
 
         clientInfoDto.setCreditRating(client.getCreditRating());
+        log.info("Выставлен кредитный рейтинг {}", client.getCreditRating());
         log.info("перед masterAcc");
         Optional<Account> masterAcc = accountRepository.findByAccountNumber("00000000000000000001");
         log.info("перед masterAcc.get()");

@@ -25,6 +25,8 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 
+import static com.bank.hits.bankcreditservice.exception.ExceptionUtils.throwExceptionRandomly;
+
 @RestController
 @Slf4j
 @AllArgsConstructor
@@ -38,6 +40,8 @@ public class CreditTariffController {
     @PostMapping("/employee/loan/tariffs/create")
     public ResponseEntity<?> createTariff(@RequestBody CreditTariff tariff,
                                           HttpServletRequest httpServletRequest) throws Exception {
+        throwExceptionRandomly();
+
         String employeeUuid = jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest));
         log.info("Запрос на создание тарифа");
         if (employeeUuid == null) {
@@ -57,6 +61,8 @@ public class CreditTariffController {
     @DeleteMapping("/employee/loan/tariffs/{tariffId}/delete")
     public ResponseEntity<?> DeleteTariff(@PathVariable String tariffId,
                                           HttpServletRequest httpServletRequest) throws Exception {
+        throwExceptionRandomly();
+
         String employeeUuid = jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest));
         log.info("Запрос на удаление тарифа от пользователя {}", employeeUuid);
         if (employeeUuid == null) {
@@ -83,6 +89,7 @@ public class CreditTariffController {
             @RequestParam String sortingOrder,
             @RequestParam int pageSize,
             @RequestParam int pageNumber) {
+        throwExceptionRandomly();
 
         LoanTariffResponseDTO response = creditTariffService.getActiveTariffs(nameQuery, sortingProperty, sortingOrder, pageSize, pageNumber-1);
         return ResponseEntity.ok(response.getLoanTariffs());
@@ -90,6 +97,8 @@ public class CreditTariffController {
 
     @GetMapping("/{id}")
     public ResponseEntity<CreditTariff> getTariffById(@PathVariable UUID id) {
+        throwExceptionRandomly();
+
         Optional<CreditTariff> tariff = creditTariffService.getTariffById(id);
         return tariff.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
