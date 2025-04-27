@@ -4,6 +4,7 @@ import com.bank.hits.bankcoreservice.api.constant.ApiConstants;
 
 import com.bank.hits.bankcoreservice.api.dto.*;
 import com.bank.hits.bankcoreservice.config.JwtUtils;
+import com.bank.hits.bankcoreservice.core.utils.IdempotencyUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -32,19 +33,26 @@ public class AccountController {
 
     private final JwtUtils jwtUtils;
 
+    private final IdempotencyUtils idempotency;
+
     @PostMapping(value = ApiConstants.CREATE_ACCOUNT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AccountDto> createAccount(@RequestParam CurrencyCode currencyCode,
+                                                    @RequestParam UUID requestId,
                                                     HttpServletRequest httpServletRequest) {
-        throwExceptionRandomly();
-        final UUID clientId = UUID.fromString(jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest)));
-        return ResponseEntity.ok(accountService.openAccount(clientId, currencyCode));
+        return idempotency.handleIdempotency(requestId, () -> {
+            throwExceptionRandomly();
+            final UUID clientId = UUID.fromString(jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest)));
+            return ResponseEntity.ok(accountService.openAccount(clientId, currencyCode));
+        });
     }
 
     @PostMapping(value = ApiConstants.CLOSE_ACCOUNT, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Void> closeAccount(@PathVariable("accountId") final UUID accountId) {
-        throwExceptionRandomly();
-        accountService.closeAccount(accountId);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Void> closeAccount(@PathVariable("accountId") final UUID accountId, @RequestParam UUID requestId) {
+        return idempotency.handleIdempotency(requestId, () -> {
+            throwExceptionRandomly();
+            accountService.closeAccount(accountId);
+            return ResponseEntity.ok().build();
+        });
     }
 
     @GetMapping(value = ApiConstants.GET_ACCOUNT, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -66,18 +74,22 @@ public class AccountController {
     public ResponseEntity<AccountDto> top_up(HttpServletRequest httpServletRequest,
                                              @PathVariable final UUID accountId,
                                              @RequestBody final ChangeBankAccountBalanceRequest changeBankAccountBalanceRequest) {
-        throwExceptionRandomly();
-        final UUID clientId = UUID.fromString(jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest)));
-        return ResponseEntity.ok(accountService.top_up(clientId, accountId, changeBankAccountBalanceRequest));
+        return idempotency.handleIdempotency(changeBankAccountBalanceRequest.getRequestId(), () -> {
+            throwExceptionRandomly();
+            final UUID clientId = UUID.fromString(jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest)));
+            return ResponseEntity.ok(accountService.top_up(clientId, accountId, changeBankAccountBalanceRequest));
+        });
     }
 
     @PostMapping(value = ApiConstants.WITHDRAW, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AccountDto> withdraw(HttpServletRequest httpServletRequest,
                                                @PathVariable final UUID accountId,
                                                @RequestBody final WithdrawRequest withdrawRequest) {
-        throwExceptionRandomly();
-        final UUID clientId = UUID.fromString(jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest)));
-        return ResponseEntity.ok(accountService.withdraw(withdrawRequest, accountId));
+        return idempotency.handleIdempotency(withdrawRequest.getRequestId(), () -> {
+            throwExceptionRandomly();
+            final UUID clientId = UUID.fromString(jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest)));
+            return ResponseEntity.ok(accountService.withdraw(withdrawRequest, accountId));
+        });
     }
 
     @PostMapping(value = ApiConstants.ACCOUNT_HISTORY, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -91,9 +103,11 @@ public class AccountController {
     @PostMapping(value = ApiConstants.TRANSFER, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AccountDto> transferMoneyBetweenAccounts(HttpServletRequest httpServletRequest,
                                                                    final @RequestBody TransferRequest request) {
-        throwExceptionRandomly();
-        final UUID clientId = UUID.fromString(jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest)));
-        return ResponseEntity.ok(accountService.transferMoneyBetweenAccounts(clientId, request));
+        return idempotency.handleIdempotency(request.getRequestId(), () -> {
+            throwExceptionRandomly();
+            final UUID clientId = UUID.fromString(jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest)));
+            return ResponseEntity.ok(accountService.transferMoneyBetweenAccounts(clientId, request));
+        });
     }
 
     @PostMapping(value = ApiConstants.TRANSFER_INFO, produces = MediaType.APPLICATION_JSON_VALUE)

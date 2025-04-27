@@ -7,6 +7,7 @@ import java.util.UUID;
 
 @Data
 public class CreditApplicationRequestDTO {
+    private UUID requestId;
     private UUID tariffId;
     private BigDecimal amount;
     private int termInMonths;

@@ -1,5 +1,6 @@
 package com.bank.hits.bankcreditservice.controller;
 
+import com.bank.hits.bankcreditservice.config.IdempotencyUtils;
 import com.bank.hits.bankcreditservice.config.JwtUtils;
 import com.bank.hits.bankcreditservice.exception.ForbiddenAccessException;
 import com.bank.hits.bankcreditservice.model.CreditTariff;
@@ -34,52 +35,69 @@ import static com.bank.hits.bankcreditservice.exception.ExceptionUtils.throwExce
 public class CreditTariffController {
     private final CreditTariffService creditTariffService;
     private final EmployeeVerificationService employeeVerificationService;
+    private final IdempotencyUtils idempotency;
 
     private final JwtUtils jwtUtils;
 
     @PostMapping("/employee/loan/tariffs/create")
     public ResponseEntity<?> createTariff(@RequestBody CreditTariff tariff,
-                                          HttpServletRequest httpServletRequest) throws Exception {
-        throwExceptionRandomly();
+                                          @RequestParam UUID requestId,
+                                          HttpServletRequest httpServletRequest) {
+        return idempotency.handleIdempotency(requestId, () -> {
+            throwExceptionRandomly();
 
-        String employeeUuid = jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest));
-        log.info("Запрос на создание тарифа");
-        if (employeeUuid == null) {
-            throw new SecurityException("Invalid token");
-        }
-        log.info("Начинаем верификацию");
-        boolean isVerified = employeeVerificationService.verifyEmployee(employeeUuid);
-        if (!isVerified) {
-            throw new ForbiddenAccessException("Employee is blocked");
-        }
-        log.info("Верификация успешна");
-        CreditTariff savedTariff = creditTariffService.saveTariff(tariff);
-        CreditTariffDTO dto = creditTariffService.convertToDTO(savedTariff);
-        return ResponseEntity.ok(dto);
+            String employeeUuid = jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest));
+            log.info("Запрос на создание тарифа");
+            if (employeeUuid == null) {
+                throw new SecurityException("Invalid token");
+            }
+            log.info("Начинаем верификацию");
+            boolean isVerified = false;
+            try {
+                isVerified = employeeVerificationService.verifyEmployee(employeeUuid);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            if (!isVerified) {
+                throw new ForbiddenAccessException("Employee is blocked");
+            }
+            log.info("Верификация успешна");
+            CreditTariff savedTariff = creditTariffService.saveTariff(tariff);
+            CreditTariffDTO dto = creditTariffService.convertToDTO(savedTariff);
+            return ResponseEntity.ok(dto);
+        });
     }
 
     @DeleteMapping("/employee/loan/tariffs/{tariffId}/delete")
     public ResponseEntity<?> DeleteTariff(@PathVariable String tariffId,
+                                          @RequestParam UUID requestId,
                                           HttpServletRequest httpServletRequest) throws Exception {
-        throwExceptionRandomly();
+        return idempotency.handleIdempotency(requestId, () -> {
+            throwExceptionRandomly();
 
-        String employeeUuid = jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest));
-        log.info("Запрос на удаление тарифа от пользователя {}", employeeUuid);
-        if (employeeUuid == null) {
-            throw new SecurityException("Invalid token");
-        }
+            String employeeUuid = jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest));
+            log.info("Запрос на удаление тарифа от пользователя {}", employeeUuid);
+            if (employeeUuid == null) {
+                throw new SecurityException("Invalid token");
+            }
 
-        boolean isVerified = employeeVerificationService.verifyEmployee(employeeUuid);
-        if (!isVerified) {
-            throw new ForbiddenAccessException("Employee is blocked");
-        }
+            boolean isVerified = false;
+            try {
+                isVerified = employeeVerificationService.verifyEmployee(employeeUuid);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            if (!isVerified) {
+                throw new ForbiddenAccessException("Employee is blocked");
+            }
 
-        boolean updated = creditTariffService.markTariffAsInactive(UUID.fromString(tariffId));
-        if (!updated) {
-            throw new NoSuchElementException("Тариф не найден");
-        }
+            boolean updated = creditTariffService.markTariffAsInactive(UUID.fromString(tariffId));
+            if (!updated) {
+                throw new NoSuchElementException("Тариф не найден");
+            }
 
-        return ResponseEntity.ok("Тариф успешно деактивирован");
+            return ResponseEntity.ok("Тариф успешно деактивирован");
+        });
     }
 
     @GetMapping("/loan/tariffs")

@@ -1,5 +1,6 @@
 package com.bank.hits.bankuserservice.controller;
 
+import com.bank.hits.bankuserservice.common.util.IdempotencyUtils;
 import com.bank.hits.bankuserservice.model.dto.RegisterRequest;
 import com.bank.hits.bankuserservice.model.dto.UserDto;
 import com.bank.hits.bankuserservice.common.enums.Role;
@@ -15,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 import static com.bank.hits.bankuserservice.common.util.ExceptionUtils.throwExceptionRandomly;
 
@@ -25,38 +27,57 @@ public class EmployeeUserController {
 
     private final UserService userService;
     private final JwtUtils jwtUtils;
+    private final IdempotencyUtils idempotency;
 
     @PostMapping("/register")
     public ResponseEntity<Void> registerUser(
             @Valid @RequestBody RegisterRequest request,
             HttpServletRequest httpServletRequest
     ) {
-        throwExceptionRandomly();
-        String token = jwtUtils.extractAccessToken(httpServletRequest);
-        userService.registerUser(token, request);
-        return ResponseEntity.noContent().build();
+        return idempotency.handleIdempotency(request.getRequestId(), () -> {
+            throwExceptionRandomly();
+            String token = jwtUtils.extractAccessToken(httpServletRequest);
+            userService.registerUser(token, request);
+            return ResponseEntity.noContent().build();
+        });
     }
 
     @PostMapping("/{userId}/ban")
     public ResponseEntity<Void> banUser(
             @PathVariable("userId") String userId,
+            @RequestParam("requestId") UUID requestId,
             HttpServletRequest httpServletRequest
-    ) throws JsonProcessingException {
-        throwExceptionRandomly();
-        String token = jwtUtils.extractAccessToken(httpServletRequest);
-        userService.banUser(token, userId);
-        return ResponseEntity.noContent().build();
+    ) {
+        return idempotency.handleIdempotency(requestId, () -> {
+            throwExceptionRandomly();
+            String token = jwtUtils.extractAccessToken(httpServletRequest);
+
+            try {
+                userService.banUser(token, userId);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+            return ResponseEntity.noContent().build();
+        });
     }
 
     @PostMapping("/{userId}/unban")
     public ResponseEntity<Void> unbanUser(
             @PathVariable("userId") String userId,
+            @RequestParam("requestId") UUID requestId,
             HttpServletRequest httpServletRequest
-    ) throws JsonProcessingException {
-        throwExceptionRandomly();
-        String token = jwtUtils.extractAccessToken(httpServletRequest);
-        userService.unbanUser(token, userId);
-        return ResponseEntity.noContent().build();
+    ) {
+        return idempotency.handleIdempotency(requestId, () -> {
+            throwExceptionRandomly();
+            String token = jwtUtils.extractAccessToken(httpServletRequest);
+
+            try {
+                userService.unbanUser(token, userId);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+            return ResponseEntity.noContent().build();
+        });
     }
 
     @GetMapping("/list")

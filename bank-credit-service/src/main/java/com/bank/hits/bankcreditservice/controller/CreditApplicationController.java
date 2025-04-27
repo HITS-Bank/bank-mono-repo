@@ -1,5 +1,6 @@
 package com.bank.hits.bankcreditservice.controller;
 
+import com.bank.hits.bankcreditservice.config.IdempotencyUtils;
 import com.bank.hits.bankcreditservice.config.JwtUtils;
 import com.bank.hits.bankcreditservice.exception.ForbiddenAccessException;
 import com.bank.hits.bankcreditservice.model.DTO.*;
@@ -30,6 +31,7 @@ import static com.bank.hits.bankcreditservice.exception.ExceptionUtils.throwExce
 public class CreditApplicationController {
     private final CreditApplicationService creditApplicationService;
     private final EmployeeVerificationService employeeVerificationService;
+    private final IdempotencyUtils idempotency;
 
     private final CreditPaymentService creditPaymentService;
 
@@ -39,21 +41,34 @@ public class CreditApplicationController {
     public ResponseEntity<CreditApplicationResponseDTO> applyForCredit(
             @RequestBody CreditApplicationRequestDTO request,
             HttpServletRequest httpServletRequest
-    ) throws Exception {
-        throwExceptionRandomly();
+    ) {
+        return idempotency.handleIdempotency(request.getRequestId(), () -> {
+            throwExceptionRandomly();
 
-        String clientUuid = jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest));
-        log.info("Запрос на создание кредита от пользователя {}", clientUuid);
-        if (clientUuid == null) {
-            throw new SecurityException("Invalid token");
-        }
-        boolean isVerified = employeeVerificationService.verifyEmployee(clientUuid);
-        if (!isVerified) {
-            throw new ForbiddenAccessException("Client is blocked");
-        }
+            String clientUuid = jwtUtils.getUserId(jwtUtils.extractAccessToken(httpServletRequest));
+            log.info("Запрос на создание кредита от пользователя {}", clientUuid);
+            if (clientUuid == null) {
+                throw new SecurityException("Invalid token");
+            }
 
-        CreditApplicationResponseDTO response = creditApplicationService.processApplication(request, clientUuid);
-        return ResponseEntity.ok(response);
+            boolean isVerified;
+            try {
+                isVerified = employeeVerificationService.verifyEmployee(clientUuid);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            if (!isVerified) {
+                throw new ForbiddenAccessException("Client is blocked");
+            }
+
+            CreditApplicationResponseDTO response;
+            try {
+                response = creditApplicationService.processApplication(request, clientUuid);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            return ResponseEntity.ok(response);
+        });
     }
 
     @GetMapping("/loan/list")
@@ -90,11 +105,18 @@ public class CreditApplicationController {
 
     @PostMapping("/loan/{loanId}/pay")
     public ResponseEntity<String> payCredit(@PathVariable UUID loanId, @RequestBody CreditPaymentRequestDTO request) throws Exception {
-        throwExceptionRandomly();
+        return idempotency.handleIdempotency(request.getRequestId(), () -> {
+            throwExceptionRandomly();
 
-        boolean success = creditPaymentService.processPayment(loanId,request, PaymentStatus.MANUAL);
-        return success ? ResponseEntity.ok("Платёж успешно проведён") :
-                ResponseEntity.badRequest().body("Платёж не одобрен");
+            boolean success;
+            try {
+                success = creditPaymentService.processPayment(loanId, request, PaymentStatus.MANUAL);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            return success ? ResponseEntity.ok("Платёж успешно проведён") :
+                    ResponseEntity.badRequest().body("Платёж не одобрен");
+        });
     }
 
     @GetMapping("/loan/{loanId}")
