@@ -6,6 +6,8 @@ import com.bank.hits.bankcreditservice.repository.CreditHistoryRepository;
 import com.bank.hits.bankcreditservice.service.api.CreditPaymentService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -48,29 +50,33 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
     @Transactional
     public boolean processPayment(UUID loanId,CreditPaymentRequestDTO request, PaymentStatus paymentStatus) throws Exception {
         CreditHistory creditHistory = creditHistoryRepository.findById(loanId)
-                .orElseThrow(() -> new RuntimeException("Кредит с таким номером не найден"));
-        String correlationId = sendPaymentRequest(creditHistory.getId(), request.getAmount(), paymentStatus, creditHistory.getRemainingDebt());
-        Semaphore semaphore = new Semaphore(0);
-        semaphoreMap.put(correlationId, new SemaphoreResponsePair(semaphore, null));
-        boolean acquired = semaphore.tryAcquire(30, TimeUnit.SECONDS);
-        if (!acquired) {
-            throw new RuntimeException("Timeout waiting for credit payment response");
-        }
-        SemaphoreResponsePair pair = semaphoreMap.remove(correlationId);
-        if (pair == null || pair.getResponse() == null) {
-            throw new RuntimeException("No valid response received for credit payment");
-        }
+                .orElseThrow(() -> new RuntimeException("Кредит не найден"));
 
-        log.info("responseDTO json: {}", pair.getResponse());
-        CreditPaymentResponseDTO responseDTO = objectMapper.readValue(pair.getResponse(), CreditPaymentResponseDTO.class);
-        log.info("responseDTO: {}", responseDTO);
-        if (responseDTO.isApproved()) {
-            creditHistory.setRemainingDebt(creditHistory.getRemainingDebt().subtract(responseDTO.getApprovedAmount()));
+        return processPaymentWithResilience(creditHistory, request, paymentStatus);
+    }
+
+
+    @CircuitBreaker(name = "paymentService", fallbackMethod = "paymentFallback")
+    @Retry(name = "paymentService")
+    private boolean processPaymentWithResilience(CreditHistory creditHistory, CreditPaymentRequestDTO dto, PaymentStatus status) throws Exception {
+        String correlationId = sendPaymentRequest(creditHistory.getId(), dto.getAmount(), status, creditHistory.getRemainingDebt());
+        Semaphore sem = semaphoreMap.get(correlationId).getSemaphore();
+        if (!sem.tryAcquire(30, TimeUnit.SECONDS))
+            throw new RuntimeException("Timeout waiting for credit payment response");
+
+        SemaphoreResponsePair pair = semaphoreMap.remove(correlationId);
+        CreditPaymentResponseDTO resp = objectMapper.readValue(pair.getResponse(), CreditPaymentResponseDTO.class);
+        if (resp.isApproved()) {
+            creditHistory.setRemainingDebt(creditHistory.getRemainingDebt().subtract(resp.getApprovedAmount()));
             creditHistoryRepository.save(creditHistory);
             return true;
-        } else {
-            return false;
         }
+        return false;
+    }
+
+    private boolean paymentFallback(CreditHistory history, CreditPaymentRequestDTO dto, PaymentStatus status, Throwable t) {
+        log.error("Платёжный сервис временно недоступен: {}", t.getMessage());
+        throw new RuntimeException("Не удалось обработать платёж, сервис недоступен", t);
     }
 
     private String sendPaymentRequest(UUID creditId, BigDecimal amount, PaymentStatus paymentStatus, BigDecimal remainingAmount) {

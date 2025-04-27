@@ -30,6 +30,10 @@ dependencies {
     implementation 'org.springframework.kafka:spring-kafka'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+    implementation("io.github.resilience4j:resilience4j-spring-boot2:1.7.1")
+    implementation ('org.springframework.boot:spring-boot-starter-aop')
+
     testImplementation 'org.testcontainers:postgresql'
     testImplementation 'org.springframework.kafka:spring-kafka-test'
     testImplementation 'org.testcontainers:kafka'

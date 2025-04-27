@@ -63,3 +63,18 @@ keycloak:
   admin-client-id: admin-service
   admin-client-secret: 9ppG4Ww9xHzIvdMGlvqLm5QPvbTPPeqp
   mobile-app-host-uri: http://10.0.2.2:8080
+
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      kafkaUserService:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        failureRateThreshold: 70
+        waitDurationInOpenState: 60s
+  retry:
+    instances:
+      kafkaUserService:
+        maxAttempts: 3
+        waitDuration: 500ms

@@ -9,6 +9,8 @@ import com.bank.hits.bankcreditservice.repository.CreditTariffRepository;
 import com.bank.hits.bankcreditservice.service.api.CreditApplicationService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -62,95 +64,18 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
     @Override
     @Transactional
     public CreditApplicationResponseDTO processApplication(CreditApplicationRequestDTO request, String clientUuid) throws Exception {
-        Optional<CreditTariff> tariffOpt = creditTariffRepository.findById(request.getTariffId());
-        if (tariffOpt.isEmpty()) {
-            throw new RuntimeException("Тариф не найден");
-        }
-        CreditTariff tariff = tariffOpt.get();
+        CreditTariff tariff = creditTariffRepository.findById(request.getTariffId())
+                .orElseThrow(() -> new RuntimeException("Тариф не найден"));
+        CreditClientInfoResponseDTO clientInfo = getClientInfoWithResilience(clientUuid);
 
-        log.info("Отправка запроса на получение информации о клиенте");
-        String correlationId = sendClientInfoRequest(clientUuid);
-        Semaphore semaphore = semaphoreMap.get(correlationId).getSemaphore();
-        boolean acquired = semaphore.tryAcquire(30, TimeUnit.SECONDS);
-        if (!acquired) {
-            throw new RuntimeException("Timeout waiting for client info response");
-        }
-        log.info("Получен ответ");
-        SemaphoreResponsePair pair = semaphoreMap.remove(correlationId);
-        if (pair == null || pair.getResponse() == null) {
-            throw new RuntimeException("No valid response received for client info");
-        }
-        CreditClientInfoResponseDTO clientInfo = objectMapper.readValue(pair.getResponse(), CreditClientInfoResponseDTO.class);
-        log.info("clientInfo = {}", clientInfo);
-        boolean approved = approveCredit(request,clientInfo);
-        log.info("approved - {}", approved);
-        if(!approved)
-        {
-            throw new CreditCreationException("Вам отказано в кредите");
-        }
+        boolean approved = approveCredit(request, clientInfo);
+        if (!approved) throw new CreditCreationException("Вам отказано в кредите");
+        CreditApplicationResponseDTO responseDTO = buildResponseDTO(request, tariff, clientUuid);
+        boolean approveCredit = sendCreditApprovalWithResilience(responseDTO, request, clientUuid);
+        if (!approveCredit) throw new CreditCreationException("Не удалось получить кредит, попробуйте позже");
 
-        String creditNumber = generateNumericString();
-        log.info("creditNumber: {}", creditNumber);
+        creditHistoryRepository.save(mapToHistory(request, clientUuid, responseDTO));
 
-        CreditApplicationResponseDTO responseDTO = new CreditApplicationResponseDTO();
-        responseDTO.setNumber(creditNumber);
-
-        CreditApplicationResponseDTO.TariffDTO tariffDTO = new CreditApplicationResponseDTO.TariffDTO();
-        tariffDTO.setId(tariff.getId());
-        tariffDTO.setName(tariff.getName());
-        tariffDTO.setInterestRate(tariff.getInterestRate());
-        tariffDTO.setCreatedAt(tariff.getCreatedAt().toLocalDateTime());
-        responseDTO.setTariff(tariffDTO);
-
-        responseDTO.setAmount(request.getAmount());
-        responseDTO.setTermInMonths(request.getTermInMonths());
-        responseDTO.setBankAccountNumber(request.getBankAccountNumber());
-        responseDTO.setBankAccountId(request.getBankAccountId());
-        responseDTO.setCurrencyCode(CurrencyCode.RUB);
-
-        BigDecimal monthlyPayment = calculateMonthlyPayment(request.getAmount(), tariff.getInterestRate(), request.getTermInMonths());
-        responseDTO.setPaymentAmount(monthlyPayment);
-
-        BigDecimal totalPayment = monthlyPayment.multiply(BigDecimal.valueOf(request.getTermInMonths()));
-        responseDTO.setPaymentSum(totalPayment);
-
-        responseDTO.setNextPaymentDateTime(LocalDateTime.now().plusMonths(1));
-        responseDTO.setCurrentDebt(request.getAmount().add(totalPayment.subtract(request.getAmount())));
-
-        CreditHistory creditHistory = new CreditHistory();
-        creditHistory.setId(UUID.randomUUID());
-        responseDTO.setId(creditHistory.getId());
-        creditHistory.setTariffId(tariff.getId());
-        creditHistory.setClientUuid(UUID.fromString(clientUuid));
-        creditHistory.setTotalAmount(request.getAmount());
-        creditHistory.setMonthlyPayment(monthlyPayment);
-        creditHistory.setStartDate(LocalDateTime.now());
-        creditHistory.setEndDate(LocalDateTime.now().plusMonths(request.getTermInMonths()));
-        creditHistory.setRemainingDebt(totalPayment);
-        creditHistory.setNumber(creditNumber);
-        creditHistory.setBankAccountNumber(request.getBankAccountNumber());
-        creditHistory.setBankAccountId(request.getBankAccountId());
-
-
-        String correlationId2 =  sendCreditApprovedEvent(creditHistory);
-        Semaphore semaphore2 = semaphoreMap.get(correlationId2).getSemaphore();
-        boolean acquired2 = semaphore2.tryAcquire(30, TimeUnit.SECONDS);
-        if (!acquired2) {
-            throw new RuntimeException("Timeout waiting for client info response");
-        }
-        log.info("Получен ответ перед pair2");
-        SemaphoreResponsePair pair2 = semaphoreMap.remove(correlationId2);
-        log.info("pair2 response: " + pair2.getResponse());
-        if (pair2 == null || pair2.getResponse() == null) {
-            throw new RuntimeException("No valid response received for client info");
-        }
-        boolean approveCredit = objectMapper.readValue(pair2.getResponse(), boolean.class);
-        log.info("approveCredit - {}", approveCredit);
-        if(!approveCredit)
-        {
-            throw new CreditCreationException("Не удалось получить кредит, попробуйте позже");
-        }
-        creditHistoryRepository.save(creditHistory);
         return responseDTO;
     }
 
@@ -160,6 +85,42 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
             sb.append(random.nextInt(10));
         }
         return sb.toString();
+    }
+
+
+
+    @CircuitBreaker(name = "clientInfoService", fallbackMethod = "clientInfoFallback")
+    @Retry(name = "clientInfoService")
+    private CreditClientInfoResponseDTO getClientInfoWithResilience(String clientUuid) throws Exception {
+        String correlationId = sendClientInfoRequest(clientUuid);
+        Semaphore semaphore = semaphoreMap.get(correlationId).getSemaphore();
+        if (!semaphore.tryAcquire(30, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Timeout waiting for client info response");
+        }
+        SemaphoreResponsePair pair = semaphoreMap.remove(correlationId);
+        return objectMapper.readValue(pair.getResponse(), CreditClientInfoResponseDTO.class);
+    }
+
+    private CreditClientInfoResponseDTO clientInfoFallback(String clientUuid, Throwable t) {
+        throw new RuntimeException("Сервис получения информации о клиенте временно недоступен", t);
+    }
+
+
+
+    @CircuitBreaker(name = "creditApprovalService", fallbackMethod = "creditApprovalFallback")
+    @Retry(name = "creditApprovalService")
+    private boolean sendCreditApprovalWithResilience(CreditApplicationResponseDTO responseDTO, CreditApplicationRequestDTO request, String clientUUID) throws Exception {
+        // ваш код sendCreditApprovedEvent + ожидание семафора
+        String correlationId = sendCreditApprovedEvent(mapToHistory(request,clientUUID, responseDTO));
+        Semaphore sem = semaphoreMap.get(correlationId).getSemaphore();
+        if (!sem.tryAcquire(30, TimeUnit.SECONDS))
+            throw new RuntimeException("Timeout waiting for credit approval response");
+        SemaphoreResponsePair pair = semaphoreMap.remove(correlationId);
+        return objectMapper.readValue(pair.getResponse(), boolean.class);
+    }
+
+    private boolean creditApprovalFallback(CreditApplicationResponseDTO dto, CreditApplicationRequestDTO req, Throwable t) {
+        throw new RuntimeException("Сервис одобрения кредита временно недоступен", t);
     }
 
 
@@ -434,5 +395,62 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         public void setResponse(String response) {
             this.response = response;
         }
+    }
+
+
+    private CreditApplicationResponseDTO buildResponseDTO(CreditApplicationRequestDTO request,
+                                                          CreditTariff tariff,
+                                                          String clientUuid) {
+        // генерируем id и номер кредита
+        UUID creditId = UUID.randomUUID();
+        String creditNumber = generateNumericString();
+
+        // рассчитываем платежи
+        BigDecimal monthlyPayment = calculateMonthlyPayment(request.getAmount(),
+                tariff.getInterestRate(),
+                request.getTermInMonths());
+        BigDecimal totalPayment = monthlyPayment.multiply(BigDecimal.valueOf(request.getTermInMonths()));
+
+        // таррифт в ответе
+        CreditApplicationResponseDTO.TariffDTO tariffDTO = new CreditApplicationResponseDTO.TariffDTO();
+        tariffDTO.setId(tariff.getId());
+        tariffDTO.setName(tariff.getName());
+        tariffDTO.setInterestRate(tariff.getInterestRate());
+        tariffDTO.setCreatedAt(tariff.getCreatedAt().toLocalDateTime());
+
+        // сам ответ
+        CreditApplicationResponseDTO responseDTO = new CreditApplicationResponseDTO();
+        responseDTO.setId(creditId);
+        responseDTO.setNumber(creditNumber);
+        responseDTO.setTariff(tariffDTO);
+        responseDTO.setAmount(request.getAmount());
+        responseDTO.setTermInMonths(request.getTermInMonths());
+        responseDTO.setBankAccountNumber(request.getBankAccountNumber());
+        responseDTO.setBankAccountId(request.getBankAccountId());
+        responseDTO.setCurrencyCode(CurrencyCode.RUB);
+        responseDTO.setPaymentAmount(monthlyPayment);
+        responseDTO.setPaymentSum(totalPayment);
+        responseDTO.setNextPaymentDateTime(LocalDateTime.now().plusMonths(1));
+        responseDTO.setCurrentDebt(totalPayment);
+
+        return responseDTO;
+    }
+
+    private CreditHistory mapToHistory(CreditApplicationRequestDTO request,
+                                       String clientUuid,
+                                       CreditApplicationResponseDTO responseDTO) {
+        CreditHistory history = new CreditHistory();
+        history.setId(responseDTO.getId());
+        history.setTariffId(responseDTO.getTariff().getId());
+        history.setClientUuid(UUID.fromString(clientUuid));
+        history.setTotalAmount(responseDTO.getAmount());
+        history.setMonthlyPayment(responseDTO.getPaymentAmount());
+        history.setStartDate(LocalDateTime.now());
+        history.setEndDate(LocalDateTime.now().plusMonths(responseDTO.getTermInMonths()));
+        history.setRemainingDebt(responseDTO.getPaymentSum());
+        history.setNumber(responseDTO.getNumber());
+        history.setBankAccountNumber(responseDTO.getBankAccountNumber());
+        history.setBankAccountId(responseDTO.getBankAccountId());
+        return history;
     }
 }

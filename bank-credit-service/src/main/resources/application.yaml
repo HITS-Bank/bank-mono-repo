@@ -83,3 +83,44 @@ jwt:
 keycloak:
   host-uri: http://keycloak:8080
   mobile-app-host-uri: http://10.0.2.2:8080
+
+
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      clientInfoService:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        failureRateThreshold: 70
+        waitDurationInOpenState: 60s
+      creditApprovalService:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        failureRateThreshold: 70
+        waitDurationInOpenState: 60s
+      paymentService:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        failureRateThreshold: 70
+        waitDurationInOpenState: 60s
+      employeeVerificationService:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        failureRateThreshold: 70
+        waitDurationInOpenState: 60s
+
+  retry:
+    instances:
+      clientInfoService:
+        maxAttempts: 3
+        waitDuration: 500ms
+      creditApprovalService:
+        maxAttempts: 3
+        waitDuration: 500ms
+      paymentService:
+        maxAttempts: 3
+        waitDuration: 500ms
+      employeeVerificationService:
+        maxAttempts: 3
+        waitDuration: 500ms

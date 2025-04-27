@@ -33,6 +33,9 @@ dependencies {
     implementation("org.springframework.security:spring-security-oauth2-jose")
     implementation("org.apache.commons:commons-lang3:3.12.0")
 
+    implementation("io.github.resilience4j:resilience4j-spring-boot2:1.7.1")
+    implementation ('org.springframework.boot:spring-boot-starter-aop')
+
     compileOnly("org.projectlombok:lombok:1.18.32")
     annotationProcessor("org.projectlombok:lombok:1.18.32")
 

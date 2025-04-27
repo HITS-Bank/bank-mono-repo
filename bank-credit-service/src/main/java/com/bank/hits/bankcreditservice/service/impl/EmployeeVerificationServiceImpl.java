@@ -4,6 +4,8 @@ import com.bank.hits.bankcreditservice.model.DTO.VerificationAnswerDTO;
 import com.bank.hits.bankcreditservice.model.DTO.VerificationResponseDTO;
 import com.bank.hits.bankcreditservice.service.api.EmployeeVerificationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -40,29 +42,28 @@ public class EmployeeVerificationServiceImpl implements EmployeeVerificationServ
 
     @Override
     public boolean verifyEmployee(String employeeUuid) throws Exception {
-        String verificationMessage = employeeUuid;
         Semaphore semaphore = new Semaphore(0);
-        log.info("Отправка сообщения верификации");
-        String messageId = sendVerificationMessage(verificationMessage, employeeUuid, semaphore);
-        boolean acquired = semaphore.tryAcquire(30, TimeUnit.SECONDS);
-        if (!acquired) {
+        return verifyWithResilience(employeeUuid,semaphore);
+    }
+
+
+
+    @CircuitBreaker(name = "employeeVerificationService", fallbackMethod = "verificationFallback")
+    @Retry(name = "employeeVerificationService")
+    private boolean verifyWithResilience(String employeeUuid, Semaphore semaphore) throws Exception {
+        String correlationId = sendVerificationMessage(employeeUuid,employeeUuid,semaphore);
+        Semaphore sem = semaphoreMap.get(correlationId).getSemaphore();
+        if (!sem.tryAcquire(30, TimeUnit.SECONDS))
             throw new RuntimeException("Timeout waiting for employee verification response");
-        }
-        SemaphoreResponsePair pair = semaphoreMap.remove(messageId);
-        if (pair != null && pair.getResponse() != null) {
-            try {
-                ObjectMapper objectMapper = new ObjectMapper();
-                VerificationAnswerDTO responseDTO = objectMapper.readValue(pair.getResponse(), VerificationAnswerDTO.class);
-                log.info("responseDTO {}", responseDTO);
-                if (!responseDTO.isBlocked()) {
-                    return true;
-                }
-                return false;
-            } catch (Exception e) {
-                log.error("Ошибка при десериализации JSON: ", e);
-            }
-        }
-        throw new RuntimeException("No valid response received for employee verification");
+
+        SemaphoreResponsePair pair = semaphoreMap.remove(correlationId);
+        VerificationAnswerDTO answer = objectMapper.readValue(pair.getResponse(), VerificationAnswerDTO.class);
+        return !answer.isBlocked();
+    }
+
+    private boolean verificationFallback(String employeeUuid, Throwable t) {
+        log.error("Сервис верификации сотрудников недоступен: {}", t.getMessage());
+        throw new RuntimeException("Не удалось проверить сотрудника, сервис недоступен", t);
     }
 
     private String sendVerificationMessage(String messageContent, String employeeUuid, Semaphore semaphore) throws JMSException {

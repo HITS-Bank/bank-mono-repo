@@ -49,3 +49,17 @@ jwt:
 keycloak:
   host-uri: http://keycloak:8080
   mobile-app-host-uri: http://10.0.2.2:8080
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      kafkaProducerService:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        failureRateThreshold: 70
+        waitDurationInOpenState: 60s
+  retry:
+    instances:
+      kafkaProducerService:
+        maxAttempts: 3
+        waitDuration: 500ms

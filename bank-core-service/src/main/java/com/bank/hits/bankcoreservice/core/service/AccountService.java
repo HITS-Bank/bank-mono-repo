@@ -246,7 +246,7 @@ public class AccountService {
      * Частичное погашение кредита по запросу (например, от клиента).
      * Списываем указанную сумму с баланса счёта и уменьшаем остаток по кредитному договору.
      */
-    public CreditPaymentResponseDTO repayCredit(final CreditRepaymentRequest repaymentRequest) {
+    public CreditPaymentResponseDTO repвayCredit(final CreditRepaymentRequest repaymentRequest) {
         log.info("Зашли в оплату");
         if (repaymentRequest.getCreditAmount() == null || new BigDecimal(repaymentRequest.getCreditAmount()).compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Repayment amount must be greater than zero");
