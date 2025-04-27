@@ -4,6 +4,8 @@ import com.bank.hits.banknotificationservice.factory.NotificationFactory;
 import com.bank.hits.banknotificationservice.model.AccountOperationEvent;
 import com.bank.hits.banknotificationservice.model.NotificationEntity;
 import com.bank.hits.banknotificationservice.service.NotificationService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -17,10 +19,11 @@ public class AccountOperationsConsumer {
 
     private final NotificationFactory notificationFactory;
     private final NotificationService notificationService;
+    private final ObjectMapper objectMapper;
 
     @KafkaListener(topics = "core.operations", groupId = "bank.group")
-    public void listenAccountOperations(ConsumerRecord<String, AccountOperationEvent> record) {
-        AccountOperationEvent event = record.value();
+    public void listenAccountOperations(ConsumerRecord<String, String> record) throws JsonProcessingException {
+        AccountOperationEvent event = objectMapper.readValue(record.value(), AccountOperationEvent.class);
         log.info("Received account operation event: {}", event);
 
         NotificationEntity notification = notificationFactory.createNotification(event);
