@@ -1,6 +1,7 @@
 package com.bank.hits.bankcoreservice.core.service;
 
 import com.bank.hits.bankcoreservice.api.enums.AccountType;
+import com.bank.hits.bankcoreservice.config.service.KafkaProducerService;
 import com.bank.hits.bankcoreservice.config.websocket.TransactionWebSocketController;
 import com.bank.hits.bankcoreservice.core.entity.*;
 import com.bank.hits.bankcoreservice.core.repository.*;
@@ -46,6 +47,8 @@ public class AccountService {
     private static final String MASTER_ACCOUNT_NUMBER = "00000000000000000001";
     private final AccountMapper accountMapper;
     private final OverduePaymentRepository overduePaymentRepository;
+
+    private final KafkaProducerService kafkaProducerService;
 
     @Autowired
     private CurrencyConversionService conversionService;
@@ -121,7 +124,19 @@ public class AccountService {
         final var accountTransactionDto = recordAccountTransaction(account, OperationType.TOP_UP, amount, inputCurrency);
 
         transactionWebSocketController.sendTransactionUpdate(accountId, accountTransactionDto);
+
+        kafkaProducerService.sendOperationEvent(map(accountTransactionDto, clientId, account.getBalance()));
         return accountMapper.map(account);
+    }
+
+    private AccountOperationEvent map(final AccountTransactionDto transactionDto, final UUID userId, final BigDecimal accountBalance) {
+        return AccountOperationEvent.builder()
+                .accountBalance(accountBalance)
+                .operationType(transactionDto.getType())
+                .userId(String.valueOf(userId))
+                .operationAmount(new BigDecimal(transactionDto.getAmount()))
+                .currencyCode(transactionDto.getCurrencyCode())
+                .build();
     }
 
     public AccountDto withdraw(final WithdrawRequest request, final UUID accountId) {
@@ -134,8 +149,6 @@ public class AccountService {
             throw new EntityNotFoundException("Account is blocked");
         }
 
-    //public AccountDto withdraw(final UUID clientId, final UUID accountId, final ChangeBankAccountBalanceRequest request) {
-       // final Account account = validateInputDataAndReturnAccount(clientId, accountId);
         final var inputCurrency = request.getCurrencyCode();
         final var accountCurrency = account.getCurrencyCode();
         final var amount = new BigDecimal(request.getAmount());
@@ -163,6 +176,7 @@ public class AccountService {
         final var accountTransactionDto = recordAccountTransaction(account, OperationType.WITHDRAW, amount, inputCurrency);
 
         transactionWebSocketController.sendTransactionUpdate(accountId, accountTransactionDto);
+        kafkaProducerService.sendOperationEvent(map(accountTransactionDto, account.getClient().getClientId(), account.getBalance()));
 
         return accountMapper.map(account);
     }
@@ -294,6 +308,8 @@ public class AccountService {
         recordCreditTransaction(creditContract, CreditTransactionType.CREDIT_REPAYMENT_AUTO, amount, repaymentRequest.getPaymentStatus());
         var transaction = recordAccountTransaction(account, OperationType.LOAN_PAYMENT, amount, CurrencyCode.RUB);
 
+        kafkaProducerService.sendOperationEvent(map(transaction, account.getClient().getClientId(), account.getBalance()));
+
         transactionWebSocketController.sendTransactionUpdate(account.getId(), transaction);
 
         creditContract.setRemainingAmount(creditContract.getRemainingAmount().subtract(amount).max(BigDecimal.ZERO));
@@ -417,6 +433,10 @@ public class AccountService {
 
         final var fromTransaction = recordAccountTransaction(fromAccount, OperationType.TRANSFER_OUTGOING, transferAmount, fromCurrency);
         final var toTransaction = recordAccountTransaction(toAccount, OperationType.TRANSFER_INCOMING, convertedAmount, toCurrency);
+        kafkaProducerService.sendOperationEvent(map(fromTransaction, fromAccount.getClient().getClientId(), fromAccount.getBalance()));
+        kafkaProducerService.sendOperationEvent(map(toTransaction, toAccount.getClient().getClientId(), toAccount.getBalance()));
+
+
         transactionWebSocketController.sendTransactionUpdate(fromAccount.getId(), fromTransaction);
         transactionWebSocketController.sendTransactionUpdate(toAccount.getId(), toTransaction);
 

@@ -1,5 +1,6 @@
 package com.bank.hits.bankcoreservice.config.service;
 
+import com.bank.hits.bankcoreservice.api.dto.AccountOperationEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
@@ -123,6 +124,30 @@ public class KafkaProducerService {
                                                    UUID correlationId,
                                                    Throwable t) {
         log.error("FALLBACK CREDIT_PAYMENT_RESPONSE for correlationId {}: {}", correlationId, t.toString());
+    }
+
+
+    @CircuitBreaker(name = "kafkaProducerService", fallbackMethod = "sendOperationEventFallback")
+    @Retry(name = "kafkaProducerService")
+    public void sendOperationEvent(final AccountOperationEvent dto) {
+        try {
+            final String message = objectMapper.writeValueAsString(dto);
+            ProducerRecord<String, String> record = new ProducerRecord<>("core.operations", message);
+            record.headers().add("timeoutExpire", "30".getBytes());
+
+            sendSync(record);
+            log.info("Sent OPERATION_EVENT event: {}", message);
+        } catch (final Exception e) {
+            log.error("Error sending OPERATION_EVENT event", e);
+            throw new RuntimeException("Error sending OPERATION_EVENT", e);
+        }
+
+    }
+
+    private void sendOperationEventFallback(CreditPaymentResponseDTO resp,
+                                                   UUID correlationId,
+                                                   Throwable t) {
+        log.error("FALLBACK OPERATION_EVENT_RESPONSE for correlationId {}: {}", correlationId, t.toString());
     }
 
     private void sendSync(ProducerRecord<String, String> record) {
