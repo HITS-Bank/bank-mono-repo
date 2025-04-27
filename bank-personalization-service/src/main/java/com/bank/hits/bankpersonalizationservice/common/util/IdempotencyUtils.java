@@ -67,7 +67,7 @@ public class IdempotencyUtils {
                     .headers(objectMapper.readValue(idempotentResponse.getResponseHeaders(), HttpHeaders.class));
 
             if (idempotentResponse.getResponseBody() != null) {
-                builder.body((T) objectMapper.readValue(idempotentResponse.getResponseBody(), Object.class));
+                return builder.body((T) objectMapper.readValue(idempotentResponse.getResponseBody(), Object.class));
             }
 
             return builder.build();

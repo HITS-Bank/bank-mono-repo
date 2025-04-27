@@ -1,6 +1,7 @@
 package com.bank.hits.bankcoreservice.config.service;
 
 import com.bank.hits.bankcoreservice.api.dto.CloseAccountRequest;
+import com.bank.hits.bankcoreservice.core.utils.IdempotencyUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,7 @@ public class AccountEventConsumer {
     private final KafkaProducerService kafkaProducerService;
     private final ClientService clientService;
     private final ObjectMapper objectMapper;
+    private final IdempotencyUtils idempotency;
 
     @KafkaListener(topics = "create.account", groupId = "bank.group")
     public void handleCreateAccount(final ConsumerRecord<String, UUID> record) {
@@ -70,9 +72,15 @@ public class AccountEventConsumer {
             {
                 throw  new RuntimeException("Получено сообщение без correlationId");
             }
+            UUID requestId = UUID.fromString(new String(record.headers().lastHeader("request_id").value()));
+            Boolean cachedResponse = idempotency.tryGetResponse(requestId, null);
+            if (cachedResponse != null) {
+                kafkaProducerService.sendCreditApproved(cachedResponse, correlationId);
+                return;
+            }
             CreditApprovedDto creditApprovedDto = objectMapper.readValue(record.value(), CreditApprovedDto.class);
             log.info("creditApproveDTO: {}", creditApprovedDto);
-            creditService.processCreditApproval(creditApprovedDto,correlationId);
+            creditService.processCreditApproval(creditApprovedDto,correlationId, requestId);
             log.info("Credit created successfully for client {}", creditApprovedDto.getClientId());
         } catch (Exception e) {
             log.error("Error processing credit.create event: {}", e.getMessage(), e);
@@ -151,7 +159,6 @@ public class AccountEventConsumer {
         }
     }
 
-
     @KafkaListener(topics = "credit.payment.request", groupId = "bank.group")
     public void handleCreditRepayment(final ConsumerRecord<String, String> record) {
         log.info("record: {}", record.value());
@@ -161,7 +168,14 @@ public class AccountEventConsumer {
             final UUID correlationId = parseCorrelationId(record);
             if (correlationId == null) { return;}
             log.info("creditContractId пришел: {}", repaymentRequest.getCreditContractId());
+            UUID requestId = UUID.fromString(new String(record.headers().lastHeader("request_id").value()));
+            final CreditPaymentResponseDTO cachedResponse = idempotency.tryGetResponse(requestId, null);
+            if (cachedResponse != null) {
+                kafkaProducerService.sendCreditPaymentResponse(cachedResponse, correlationId);
+                return;
+            }
             final CreditPaymentResponseDTO response = accountService.repayCredit(repaymentRequest);
+            idempotency.storeResponse(requestId, response);
             kafkaProducerService.sendCreditPaymentResponse(response, correlationId);
             log.info("Credit repayment processed for application {}", repaymentRequest.getCreditContractId());
         } catch (Exception e) {

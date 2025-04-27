@@ -40,6 +40,8 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
 
     private final Map<String, SemaphoreResponsePair> semaphoreMap = new ConcurrentHashMap<>();
 
+    private final Map<Integer, UUID> hashCodeIdempotencyMap = new ConcurrentHashMap<>();
+
     @Value("${kafka.topics.credit-payment.request}")
     private String creditPaymentRequestTopic;
 
@@ -59,13 +61,27 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
     @CircuitBreaker(name = "paymentService", fallbackMethod = "paymentFallback")
     @Retry(name = "paymentService")
     private boolean processPaymentWithResilience(CreditHistory creditHistory, CreditPaymentRequestDTO dto, PaymentStatus status) throws Exception {
-        String correlationId = sendPaymentRequest(creditHistory.getId(), dto.getAmount(), status, creditHistory.getRemainingDebt());
+        int hashCode = creditHistory.getId().hashCode();
+        hashCode= 31 * hashCode + dto.getAmount().hashCode();
+        hashCode = 31 * hashCode + status.hashCode();
+        hashCode = 31 * hashCode + creditHistory.getRemainingDebt().hashCode();
+
+        UUID requestId;
+        if (hashCodeIdempotencyMap.containsKey(hashCode)) {
+            requestId = hashCodeIdempotencyMap.get(hashCode);
+        } else {
+            requestId = UUID.randomUUID();
+            hashCodeIdempotencyMap.put(hashCode, requestId);
+        }
+
+        String correlationId = sendPaymentRequest(creditHistory.getId(), dto.getAmount(), status, creditHistory.getRemainingDebt(), requestId);
         Semaphore sem = semaphoreMap.get(correlationId).getSemaphore();
         if (!sem.tryAcquire(30, TimeUnit.SECONDS))
             throw new RuntimeException("Timeout waiting for credit payment response");
 
         SemaphoreResponsePair pair = semaphoreMap.remove(correlationId);
         CreditPaymentResponseDTO resp = objectMapper.readValue(pair.getResponse(), CreditPaymentResponseDTO.class);
+        hashCodeIdempotencyMap.remove(hashCode);
         if (resp.isApproved()) {
             creditHistory.setRemainingDebt(creditHistory.getRemainingDebt().subtract(resp.getApprovedAmount()));
             creditHistoryRepository.save(creditHistory);
@@ -79,7 +95,7 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
         throw new RuntimeException("Не удалось обработать платёж, сервис недоступен", t);
     }
 
-    private String sendPaymentRequest(UUID creditId, BigDecimal amount, PaymentStatus paymentStatus, BigDecimal remainingAmount) {
+    private String sendPaymentRequest(UUID creditId, BigDecimal amount, PaymentStatus paymentStatus, BigDecimal remainingAmount, UUID requestId) {
         log.info("pay started");
         String correlationId = UUID.randomUUID().toString();
         try {
@@ -94,6 +110,7 @@ public class CreditPaymentServiceImpl implements CreditPaymentService {
             log.info("message при отправке оплаты: {}", message);
             ProducerRecord<String, String> record = new ProducerRecord<>(creditPaymentRequestTopic, message);
             record.headers().add("correlation_id", correlationId.getBytes());
+            record.headers().add("request_id", requestId.toString().getBytes());
             kafkaTemplate.send(record);
             log.info("Отправлен запрос на оплату кредита: {}", message);
             semaphoreMap.put(correlationId, new SemaphoreResponsePair(new Semaphore(0), null));

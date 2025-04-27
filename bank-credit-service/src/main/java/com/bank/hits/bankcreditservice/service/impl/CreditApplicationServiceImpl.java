@@ -48,6 +48,8 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
 
     private final Map<String, SemaphoreResponsePair> semaphoreMap = new ConcurrentHashMap<>();
 
+    private final Map<Integer, UUID> hashCodeIdempotencyMap = new ConcurrentHashMap<>();
+
     private final CreditTariffRepository creditTariffRepository;
 
     private final CreditHistoryRepository creditHistoryRepository;
@@ -111,11 +113,13 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
     @Retry(name = "creditApprovalService")
     private boolean sendCreditApprovalWithResilience(CreditApplicationResponseDTO responseDTO, CreditApplicationRequestDTO request, String clientUUID) throws Exception {
         // ваш код sendCreditApprovedEvent + ожидание семафора
-        String correlationId = sendCreditApprovedEvent(mapToHistory(request,clientUUID, responseDTO));
+        CreditHistory history = mapToHistory(request,clientUUID, responseDTO);
+        String correlationId = sendCreditApprovedEvent(history);
         Semaphore sem = semaphoreMap.get(correlationId).getSemaphore();
         if (!sem.tryAcquire(30, TimeUnit.SECONDS))
             throw new RuntimeException("Timeout waiting for credit approval response");
         SemaphoreResponsePair pair = semaphoreMap.remove(correlationId);
+        hashCodeIdempotencyMap.remove(history.hashCode());
         return objectMapper.readValue(pair.getResponse(), boolean.class);
     }
 
@@ -218,6 +222,13 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
 
     private String sendCreditApprovedEvent(CreditHistory creditHistory) {
         String correlationId = UUID.randomUUID().toString();
+        UUID requestId;
+        if (hashCodeIdempotencyMap.containsKey(creditHistory.hashCode())) {
+            requestId = hashCodeIdempotencyMap.get(creditHistory.hashCode());
+        } else {
+            requestId = UUID.randomUUID();
+            hashCodeIdempotencyMap.put(creditHistory.hashCode(), requestId);
+        }
         try {
             CreditApprovedDTO approvedDto = new CreditApprovedDTO();
             log.info("creditId = " + creditHistory.getId());
@@ -233,6 +244,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
             String message = objectMapper.writeValueAsString(approvedDto);
             ProducerRecord<String, String> record = new ProducerRecord<>(creditApprovedTopic, message);
             record.headers().add("correlation_id", correlationId.getBytes());
+            record.headers().add("request_id", requestId.toString().getBytes());
             log.info("record подтверждения кредита: {}", record);
             kafkaTemplate.send(record);
             log.info("Сообщение о подтверждении кредита отправлено в Kafka: {}", message);

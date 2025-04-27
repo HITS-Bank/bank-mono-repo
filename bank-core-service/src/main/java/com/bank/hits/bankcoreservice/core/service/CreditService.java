@@ -2,6 +2,7 @@ package com.bank.hits.bankcoreservice.core.service;
 
 import com.bank.hits.bankcoreservice.api.dto.CurrencyCode;
 import com.bank.hits.bankcoreservice.core.utils.AccountNumberGenerator;
+import com.bank.hits.bankcoreservice.core.utils.IdempotencyUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -44,6 +45,7 @@ public class CreditService {
     private final AccountRepository accountRepository;
     private final KafkaProducerService kafkaProducerService;
     private final AccountNumberGenerator accountNumberGenerator;
+    private final IdempotencyUtils idempotency;
 
 
     public List<CreditContractDto> getCreditsByClientId(final UUID clientId) {
@@ -66,7 +68,7 @@ public class CreditService {
     }
 
     @Transactional
-    public void processCreditApproval(final CreditApprovedDto creditApprovedDto, UUID correlationId) {
+    public void processCreditApproval(final CreditApprovedDto creditApprovedDto, UUID correlationId, UUID requestId) {
         try {
             log.info("Processing credit approval for client {}", creditApprovedDto.getClientId());
 
@@ -119,12 +121,14 @@ public class CreditService {
             creditAccount.setBalance(creditAccount.getBalance().add(creditContract.getCreditAmount()));
             log.info("Перед accountRepository.save(creditAccount)");
             accountRepository.save(creditAccount);
+            idempotency.storeResponse(requestId, true);
             kafkaProducerService.sendCreditApproved(true,correlationId);
             kafkaProducerService.sendCreditAccountCreatedEvent(creditContract, creditAccount);
         }
         catch (Exception e)
         {
             log.info("Внутренняя ошибка выдачи кредита: {} ", e.getMessage());
+            idempotency.storeResponse(requestId, false);
             kafkaProducerService.sendCreditApproved(false,correlationId);
         }
     }
